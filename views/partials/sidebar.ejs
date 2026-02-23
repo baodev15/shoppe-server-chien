@@ -1,0 +1,336 @@
+<div class="sidebar" id="sidebar" style="height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000;">
+  <div class="sidebar-header">
+    <img src="/images/logo.png" alt="Logo" class="logo" style="width: 30px; height: 30px; object-fit: contain; margin-right: 8px;">
+    <h3>Shopee Tool</h3>
+    <button id="toggleSidebar" class="toggle-btn">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+  <div class="sidebar-menu">
+    <div class="menu-group">
+      <a href="/shopee-accounts"  class="menu-item-header <%= locals.activePage === 'shopee-accounts' ? 'active' : '' %>">
+        <i class="fas fa-users"></i>
+        <span>Tài khoản Shopee</span>
+      </a>
+    </div>
+
+    
+    <!-- For products if it only has one submenu item -->
+    <div class="menu-group">
+      <a href="/products" class="menu-item-header <%= locals.activePage === 'products' ? 'active' : '' %>">
+        <i class="fas fa-box"></i>
+        <span>Sản Phẩm</span>
+      </a>
+    </div>
+    
+    <!-- For tools if it only has one submenu item -->
+
+    <div class="menu-group">
+      <div class="menu-item-header <%= locals.activePage && locals.activePage.startsWith('admin') ? 'active' : '' %>">
+        <i class="fas fa-user-shield"></i>
+        <span>Quản trị</span>
+        <i class="fas fa-chevron-right"></i>
+      </div>
+      <div class="submenu">
+      
+        <% if (locals.user && locals.user.role === 'admin') { %>
+          <a href="/admin/accounts" class="submenu-item <%= locals.activePage === 'admin-accounts' ? 'active' : '' %>">
+            <i class="fas fa-user-cog"></i>
+            <span>Quản lý tài khoản</span>
+          </a>
+        <a href="/admin/teams" class="submenu-item <%= locals.activePage === 'admin-teams' ? 'active' : '' %>">
+          <i class="fas fa-users-cog"></i>
+          <span>Quản lý Team</span>
+        </a>
+        <% } %>
+        <a href="/settings" class="submenu-item <%= locals.activePage === 'settings' ? 'active' : '' %>">
+          <i class="fas fa-cogs"></i>
+          <span>Cấu hình Live</span>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Fix for Thống kê doanh thu menu item --
+    
+    <!-- Revenue Statistics menu item -->
+    <div class="menu-group">
+      <a href="/revenue-stats" class="menu-item-header <%= locals.activePage === 'revenue-stats' ? 'active' : '' %>">
+        <i class="fas fa-money-bill-wave"></i>
+        <span>Doanh thu theo ngày</span>
+      </a>
+    </div>
+  </div>
+  
+  <div class="sidebar-footer">
+    <a href="/logout" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i>
+      <span style="color: #ffffff;">Đăng xuất</span>
+    </a>
+  </div>
+</div>
+
+<style>
+  .sidebar {
+    width: 200px; /* Reduced from 250px */
+    height: 100vh;
+    background-color: #ee4d2d;
+    color: #ecf0f1;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+    visibility: visible;
+    opacity: 1;
+    font-size: 11px; /* Smaller font size */
+  }
+  
+  .sidebar.collapsed {
+    width: 50px; /* Reduced from 70px */
+  }
+  
+  /* Hide sidebar initially to prevent flash */
+  .sidebar:not(.initialized) {
+    visibility: hidden;
+  }
+  
+  .sidebar.initialized {
+    visibility: visible;
+  }
+  
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 10px; /* Reduced from 15px */
+    border-bottom: 1px solid #34495e;
+    position: relative;
+  }
+  
+  .sidebar-header h3 {
+    font-size: 14px; /* Smaller title */
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  
+  .toggle-btn {
+    position: absolute;
+    right: 8px; /* Adjusted */
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #ecf0f1;
+    font-size: 14px; /* Smaller icon */
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+  
+  .toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .sidebar.collapsed .sidebar-header h3,
+  .sidebar.collapsed .menu-item-header span,
+  .sidebar.collapsed .submenu-item span,
+  .sidebar.collapsed .logout-btn span,
+  .sidebar.collapsed .sidebar-header .logo {
+    display: none;
+  }
+  
+  .sidebar.collapsed .menu-item-header,
+  .sidebar.collapsed .submenu-item,
+  .sidebar.collapsed .logout-btn {
+    justify-content: center;
+    padding: 10px 0; /* Reduced */
+  }
+  
+  .sidebar.collapsed .fa-chevron-right {
+    display: none;
+  }
+  
+  .sidebar.collapsed .submenu {
+    position: absolute;
+    left: 50px; /* Adjusted */
+    top: 0;
+    width: 150px; /* Reduced from 180px */
+    background-color: #34495e;
+    display: none;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    font-size: 11px;
+  }
+  
+  .sidebar.collapsed .menu-group:hover .submenu {
+    display: block;
+  }
+  
+  .sidebar.collapsed .logo {
+    margin-right: 0;
+  }
+  
+  .menu-item-header, .submenu-item {
+    padding: 8px 12px; /* Reduced */
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #ecf0f1;
+    transition: all 0.2s;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  
+  .menu-item-header:hover, .submenu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .menu-item-header.active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .menu-item-header i:first-child,
+  .submenu-item i {
+    margin-right: 8px; /* Reduced */
+    width: 14px; /* Smaller icons */
+    text-align: center;
+  }
+  
+  .fa-chevron-right {
+    margin-left: auto;
+    font-size: 10px; /* Smaller */
+  }
+  
+  .submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #34495e;
+  }
+  
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px; /* Reduced */
+    text-decoration: none;
+    color: #ecf0f1;
+    transition: all 0.2s;
+    font-size: 11px;
+  }
+  
+  .logout-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Adjust main content when sidebar is collapsed */
+  .main-content {
+    margin-left: 200px; /* Reduced from 250px */
+    transition: all 0.3s ease;
+  }
+  
+  body.sidebar-collapsed .main-content {
+    margin-left: 50px; /* Reduced from 70px */
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed;
+      left: -200px; /* Adjusted */
+      top: 0;
+      height: 100vh;
+      z-index: 1000;
+    }
+    
+    .sidebar.show {
+      left: 0;
+    }
+    
+    .sidebar.collapsed {
+      left: -50px; /* Adjusted */
+      width: 50px;
+    }
+    
+    .sidebar.collapsed.show {
+      left: 0;
+    }
+    
+    .main-content {
+      margin-left: 0;
+    }
+    
+    body.sidebar-collapsed .main-content {
+      margin-left: 0;
+    }
+  }
+</style>
+
+<script>
+  // Apply sidebar state immediately to prevent flickering
+  (function() {
+    const sidebar = document.getElementById('sidebar');
+    const body = document.body;
+    
+    // Check if sidebar state is saved in localStorage
+    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    
+    // Apply saved state immediately before DOM loads
+    if (sidebarCollapsed) {
+      sidebar.classList.add('collapsed');
+      body.classList.add('sidebar-collapsed');
+    }
+    
+    // Add initialized class to show sidebar after state is applied
+    sidebar.classList.add('initialized');
+  })();
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    const body = document.body;
+    
+    toggleBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('collapsed');
+      body.classList.toggle('sidebar-collapsed');
+      
+      // Save state to localStorage
+      localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    });
+    
+    // For mobile: close sidebar when clicking outside
+    document.addEventListener('click', function(event) {
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile && !sidebar.contains(event.target) && !sidebar.classList.contains('collapsed')) {
+        sidebar.classList.add('collapsed');
+        body.classList.add('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', 'true');
+      }
+    });
+    
+    // Handle submenu in collapsed mode for desktop
+    const menuGroups = document.querySelectorAll('.menu-group');
+    menuGroups.forEach(group => {
+      const submenu = group.querySelector('.submenu');
+      if (submenu) {
+        group.addEventListener('mouseenter', function() {
+          if (sidebar.classList.contains('collapsed')) {
+            const groupRect = group.getBoundingClientRect();
+            submenu.style.top = groupRect.top + 'px';
+          }
+        });
+      }
+    });
+  });
+</script>

@@ -1,0 +1,168 @@
+<div class="container-fluid py-4">
+  <h2 class="mb-4">Thống kê doanh thu</h2>
+  
+  <!-- Filter Form -->
+  <div class="card mb-4" style="width: 100vw">
+    <div class="card-body">
+      <form method="GET" action="/revenue-stats" class="row g-3">
+        <div class="col-md-3">
+          <label for="month-picker" class="form-label">Chọn tháng:</label>
+          <input type="month" class="form-control" id="month-picker" name="month-year" 
+                 value="<%= year %>-<%= month.toString().padStart(2, '0') %>" 
+                 onchange="updateMonthYear(this.value)">
+          <input type="hidden" name="month" id="month-input" value="<%= month %>">
+          <input type="hidden" name="year" id="year-input" value="<%= year %>">
+        </div>
+        
+        <div class="col-md-3">
+          <label for="username" class="form-label">Username:</label>
+          <input type="text" class="form-control" id="username" name="username" 
+                 placeholder="Tìm theo username" value="<%= username %>">
+        </div>
+        
+        <% if (showTeamFilter) { %>
+        <div class="col-md-3">
+          <label for="team" class="form-label">Team:</label>
+          <select class="form-select" id="team" name="team">
+            <option value="">Tất cả</option>
+            <% teams.forEach(teamName => { %>
+              <option value="<%= teamName %>" <%= team === teamName ? 'selected' : '' %>><%= teamName %></option>
+            <% }); %>
+          </select>
+        </div>
+        <% } %>
+        
+        <div class="col-md-<%= showTeamFilter ? '3' : '6' %> d-flex align-items-end">
+          <button type="submit" class="btn btn-primary">Lọc</button>
+          <a href="/revenue-stats" class="btn btn-secondary ms-2">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Debug Info (outside of table) -->
+  <% if (process.env.NODE_ENV === 'development') { %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5>Debug Info:</h5>
+      <pre>
+Month: <%= month %>
+Year: <%= year %>
+Days in Month: <%= daysInMonth %>
+Account Count: <%= accounts.length %>
+Grand Total: <%= grandTotal %>
+      </pre>
+    </div>
+  </div>
+  <% } %>
+  
+  <!-- Revenue Table -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <style>
+          .revenue-table-container {
+            overflow-x: auto;
+            width: 100%;
+          }
+          .revenue-table {
+            width: 100%;
+            table-layout: auto;
+          }
+          /* Remove fixed-columns class that might be causing layout issues */
+          .fixed-columns {
+            background-color: inherit;
+          }
+        </style>
+        <div class="revenue-table-container">
+          <table class="table table-bordered table-hover revenue-table">
+            <thead class="table-light">
+              <tr>
+                <th class="text-center" style="width: 50px;">STT</th>
+                <th style="min-width: 150px;">Tài khoản</th>
+                <% if (showTeamFilter) { %>
+                <th style="min-width: 120px;">Team</th>
+                <th style="min-width: 120px;">MCN</th>
+                <% } %>
+                <% for(let i = 1; i <= daysInMonth; i++) { %>
+                  <th class="text-center" style="min-width: 80px;"><%= i %></th>
+                <% } %>
+                <th class="text-center" style="min-width: 100px;">Tổng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (accounts && accounts.length > 0) { %>
+                <% accounts.forEach((account, index) => { %>
+                  <tr>
+                    <td class="text-center fixed-columns"><%= index + 1 %></td>
+                    <td class="fixed-columns"><%= account.username || 'N/A' %></td>
+                    <% if (showTeamFilter) { %>
+                    <td class="fixed-columns"><%= account.team || 'N/A' %></td>
+                    <td class="fixed-columns">
+                      <!-- Display Is MCN status -->
+                      <% if(account.isMcn) { %>
+                      <span class="badge bg-info">MCN</span>
+                      <% } else { %>
+                      <span class="badge bg-secondary">No</span>
+                      <% } %>
+                    </td>
+                    <% } %>
+                    <% for(let i = 0; i < daysInMonth; i++) { %>
+                      <td class="text-end <%= (account.dailyData && account.dailyData[i] > 0) ? 'text-success' : '' %>">
+                        <div><%= (account.dailyData) ? account.dailyData[i].toFixed(2) : 'N/A' %></div>
+                        <small class="text-muted">
+                          <%= (account.dailyItemsSold && account.dailyItemsSold[i]) ? account.dailyItemsSold[i] + ' sp' : '0 sp' %>
+                        </small>
+                      </td>
+                    <% } %>
+                    <td class="text-end fw-bold">
+                      <div><%= account.total ? account.total.toFixed(2) : '0.00' %></div>
+                      <small class="text-muted">
+                        <%= account.totalItemsSold ? account.totalItemsSold + ' sp' : '0 sp' %>
+                      </small>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="<%= daysInMonth + (showTeamFilter ? 4 : 3) %>" class="text-center">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <td colspan="<%= showTeamFilter ? 4 : 2 %>" class="fw-bold fixed-columns">Tổng theo ngày</td>
+                <% for(let i = 0; i < daysInMonth; i++) { %>
+                  <td class="text-end fw-bold">
+                    <div><%= dailyTotals[i].toFixed(2) %></div>
+                    <small class="text-muted">
+                      <%= dailyItemsSoldTotals && dailyItemsSoldTotals[i] ? dailyItemsSoldTotals[i] + ' sp' : '0 sp' %>
+                    </small>
+                  </td>
+                <% } %>
+                <td class="text-end fw-bold">
+                  <div><%= grandTotal.toFixed(2) %></div>
+                  <small class="text-muted">
+                    <%= totalItemsSold ? totalItemsSold + ' sp' : '0 sp' %>
+                  </small>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateMonthYear(value) {
+    if (value) {
+      const [year, month] = value.split('-');
+      document.getElementById('month-input').value = parseInt(month);
+      document.getElementById('year-input').value = year;
+    }
+  }
+</script>

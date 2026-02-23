@@ -1,0 +1,524 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Products Management</h1>
+    <div>
+      <!-- New Import by Links Button -->
+      <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#importLinksModal">
+        <i class="fas fa-link"></i> Import by Links
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert Messages -->
+  <% if (message) { %>
+    <div class="alert alert-<%= message.type === 'success' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
+      <%= message.text %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <!-- Import Links Modal -->
+  <div class="modal fade" id="importLinksModal" tabindex="-1" aria-labelledby="importLinksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="importLinksModalLabel">
+            <i class="fas fa-link"></i> Import Products by Links
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="productLinks" class="form-label">Product Links (one per line)</label>
+              <textarea 
+                class="form-control" 
+                id="productLinks" 
+                name="productLinks" 
+                rows="10" 
+                placeholder="https://shopee.vn/product-name-i.12345.67890&#10;https://shopee.vn/another-product-i.54321.09876"
+                required
+              ></textarea>
+              <small class="form-text text-muted">
+                Enter Shopee product links, one per line. Item IDs will be generated from link hashes.
+              </small>
+            </div>
+            
+            <% if (user && user.role === 'admin') { %>
+              <!-- Admin can choose team -->
+              <div class="mb-3">
+                <label for="importTeam" class="form-label">Assign to Team</label>
+                <select class="form-select" id="importTeam" name="team" required>
+                  <option value="">Select Team</option>
+                  <% if (teams && teams.length > 0) { %>
+                    <% teams.forEach(team => { %>
+                      <option value="<%= team._id %>"><%= team.name %></option>
+                    <% }); %>
+                  <% } %>
+                </select>
+              </div>
+            <% } else if (user && user.team) { %>
+              <!-- Regular user - auto-assign to their team -->
+              <input type="hidden" name="team" id="importTeamDefault" value="<%= user.team._id %>">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                Products will be assigned to your team: <strong><%= user.team.name %></strong>
+              </div>
+            <% } else { %>
+              <!-- User without team -->
+              <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> 
+                You don't have a team assigned. Please contact admin.
+              </div>
+            <% } %>
+            
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i> 
+              <strong>Note:</strong> Products will be imported with basic information. 
+              Item IDs will be generated using hash of the product links to ensure uniqueness.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="importSubmitBtn" <%= (!user || (!user.team && user.role !== 'admin')) ? 'disabled' : '' %>>
+              <i class="fas fa-upload"></i> Import Products
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section - Collapsible -->
+  <div class="card mb-4">
+    <div class="card-header" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" style="cursor: pointer;">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+        <i class="fas fa-chevron-down" id="filterIcon"></i>
+      </div>
+    </div>
+    <div class="collapse" id="filtersCollapse">
+      <div class="card-body">
+        <form id="filterForm" method="GET" action="/products">
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label for="item_id" class="form-label">Item ID</label>
+              <input type="text" class="form-control" id="item_id" name="item_id" value="<%= query.item_id || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="shop_id" class="form-label">Shop ID</label>
+              <input type="text" class="form-control" id="shop_id" name="shop_id" value="<%= query.shop_id || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="name" class="form-label">Product Name</label>
+              <input type="text" class="form-control" id="name" name="name" value="<%= query.name || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="team" class="form-label">Team</label>
+              <select class="form-select" id="team" name="team">
+                <option value="">All Teams</option>
+                <% if (teams && teams.length > 0) { %>
+                  <% teams.forEach(team => { %>
+                    <option value="<%= team._id %>" <%= query.team === team._id.toString() ? 'selected' : '' %>><%= team.name %></option>
+                  <% }); %>
+                <% } %>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label for="min_price" class="form-label">Min Price</label>
+              <input type="number" class="form-control" id="min_price" name="min_price" value="<%= query.min_price || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="max_price" class="form-label">Max Price</label>
+              <input type="number" class="form-control" id="max_price" name="max_price" value="<%= query.max_price || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="min_sold" class="form-label">Min Sold</label>
+              <input type="number" class="form-control" id="min_sold" name="min_sold" value="<%= query.min_sold || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="max_sold" class="form-label">Max Sold</label>
+              <input type="number" class="form-control" id="max_sold" name="max_sold" value="<%= query.max_sold || '' %>">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label for="isCreatedVideo" class="form-label">Video Created</label>
+              <select class="form-select" id="isCreatedVideo" name="isCreatedVideo">
+                <option value="">All</option>
+                <option value="true" <%= query.isCreatedVideo === 'true' ? 'selected' : '' %>>Yes</option>
+                <option value="false" <%= query.isCreatedVideo === 'false' ? 'selected' : '' %>>No</option>
+              </select>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="statusUpVideo" class="form-label">Video Status</label>
+              <select class="form-select" id="statusUpVideo" name="statusUpVideo">
+                <option value="">All Status</option>
+                <option value="Chưa cập nhật" <%= query.statusUpVideo === 'Chưa cập nhật' ? 'selected' : '' %>>Chưa cập nhật</option>
+                <option value="Đã upload" <%= query.statusUpVideo === 'Đã upload' ? 'selected' : '' %>>Đã upload</option>
+                <option value="Đang xử lý" <%= query.statusUpVideo === 'Đang xử lý' ? 'selected' : '' %>>Đang xử lý</option>
+                <option value="Lỗi" <%= query.statusUpVideo === 'Lỗi' ? 'selected' : '' %>>Lỗi</option>
+              </select>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="min_rating_star" class="form-label">Min Rating</label>
+              <input type="number" step="0.1" class="form-control" id="min_rating_star" name="min_rating_star" value="<%= query.min_rating_star || '' %>">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="max_rating_star" class="form-label">Max Rating</label>
+              <input type="number" step="0.1" class="form-control" id="max_rating_star" name="max_rating_star" value="<%= query.max_rating_star || '' %>">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+              </button>
+              <a href="/products" class="btn btn-secondary">
+                <i class="fas fa-undo"></i> Clear
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Controls -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="d-flex align-items-center">
+        <label for="pageSize" class="me-2 mb-0">Show:</label>
+        <select class="form-select form-select-sm" id="pageSize" name="pageSize" style="width: auto;">
+          <option value="100" <%= limit === 100 ? 'selected' : '' %>>100</option>
+          <option value="200" <%= limit === 200 ? 'selected' : '' %>>200</option>
+          <option value="500" <%= limit === 500 ? 'selected' : '' %>>500</option>
+          <option value="1000" <%= limit === 1000 ? 'selected' : '' %>>1000</option>
+        </select>
+        <span class="ms-2 text-muted">entries</span>
+      </div>
+    </div>
+    <div class="col-md-6 text-end">
+      <small class="text-muted">
+        Showing <%= ((currentPage - 1) * limit) + 1 %> to <%= Math.min(currentPage * limit, totalItems) %> of <%= totalItems %> entries
+      </small>
+    </div>
+  </div>
+
+  <!-- Products Table -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="fas fa-table"></i> Products List (<%= totalItems %> items)</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th width="5%">#</th>
+              <th width="10%">Item ID</th>
+              <th width="8%">Shop ID</th>
+              <th width="25%">Name</th>
+              <th width="8%">Rating</th>
+              <th width="10%">Price</th>
+              <th width="8%">Sold</th>
+              <th width="8%">Team</th>
+              <th width="8%">Video Created</th>
+              <th width="8%">Video Status</th>
+              <th width="8%">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (products && products.length > 0) { %>
+              <% products.forEach((product, index) => { %>
+                <tr>
+                  <td><%= ((currentPage - 1) * limit) + index + 1 %></td>
+                  <td>
+                    <code><%= product.item_id %></code>
+                  </td>
+                  <td><%= product.shop_id %></td>
+                  <td>
+                    <div class="text-truncate" style="max-width: 300px;" title="<%= product.name %>">
+                      <%= product.name %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (product.rating_star) { %>
+                      <span class="badge bg-warning text-dark">
+                        <%= product.rating_star.toFixed(1) %> <i class="fas fa-star"></i>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="text-success fw-bold">
+                      <%= formatPrice(product.price) %>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">
+                      <%= product.sold.toLocaleString() %>
+                    </span>
+                  </td>
+                  <td>
+                    <% if (product.team) { %>
+                      <span class="badge bg-secondary"><%= product.team.name || 'Team' %></span>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (product.isCreatedVideo) { %>
+                      <span class="badge bg-success">Yes</span>
+                    <% } else { %>
+                      <span class="badge bg-secondary">No</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge <%= product.statusUpVideo === 'Chưa cập nhật' ? 'bg-secondary' : 
+                                         product.statusUpVideo === 'Đã upload' ? 'bg-success' : 
+                                         product.statusUpVideo === 'Đang xử lý' ? 'bg-warning text-dark' : 
+                                         product.statusUpVideo === 'Lỗi' ? 'bg-danger' : 
+                                         'bg-secondary' %>">
+                      <%= product.statusUpVideo %>
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a href="<%= product.product_link %>" target="_blank" class="btn btn-outline-primary" title="View on Shopee">
+                        <i class="fas fa-external-link-alt"></i>
+                      </a>
+                      <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editProductModal" 
+                              data-id="<%= product._id %>" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="11" class="text-center text-muted py-4">
+                  <i class="fas fa-inbox fa-3x mb-3"></i>
+                  <p>No products found</p>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <% if (pagination && pagination.totalPages > 1) { %>
+    <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center">
+        <!-- Previous button -->
+        <li class="page-item <%= pagination.hasPrevPage ? '' : 'disabled' %>">
+          <a class="page-link" href="<%= pagination.hasPrevPage ? buildQueryString(pagination.prevPage) : '#' %>" tabindex="-1">
+            <i class="fas fa-chevron-left"></i>
+          </a>
+        </li>
+        
+        <!-- Page numbers -->
+        <% pagination.pages.forEach(page => { %>
+          <% if (page === '...') { %>
+            <li class="page-item disabled">
+              <span class="page-link">...</span>
+            </li>
+          <% } else { %>
+            <li class="page-item <%= page === pagination.currentPage ? 'active' : '' %>">
+              <a class="page-link" href="<%= buildQueryString(page) %>"><%= page %></a>
+            </li>
+          <% } %>
+        <% }); %>
+        
+        <!-- Next button -->
+        <li class="page-item <%= pagination.hasNextPage ? '' : 'disabled' %>">
+          <a class="page-link" href="<%= pagination.hasNextPage ? buildQueryString(pagination.nextPage) : '#' %>">
+            <i class="fas fa-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  <% } %>
+</div>
+
+<%- contentFor('extraScripts') %>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+  $(document).ready(function() {
+    // Auto-submit form when dropdown changes
+    $('select:not(#pageSize):not(#importTeam)').on('change', function() {
+      $('#filterForm').submit();
+    });
+    // Handle page size change
+    $('#pageSize').on('change', function() {
+      const params = new URLSearchParams(window.location.search);
+      params.set('limit', $(this).val());
+      params.set('page', '1');
+      window.location.href = '/products?' + params.toString();
+    });
+
+    // Handle filter collapse icon rotation
+    $('#filtersCollapse').on('show.bs.collapse', function() {
+      $('#filterIcon').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    }).on('hide.bs.collapse', function() {
+      $('#filterIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    });
+
+    // Simple notification function
+    function showNotification(message, type = 'success') {
+      const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-warning';
+      const icon = type === 'success' ? 'fa-check' : type === 'error' ? 'fa-times' : 'fa-exclamation-triangle';
+      
+      const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+          <i class="fas ${icon}"></i> ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `);
+      
+      $('body').append(notification);
+      
+      setTimeout(() => {
+        notification.alert('close');
+      }, 3000);
+    }
+
+    // Import handler with detailed results
+    $('#importSubmitBtn').on('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const $btn = $(this);
+      const productLinks = $('#productLinks').val().trim();
+      const importTeam = $("#importTeam").val() ?? $("#importTeamDefault").val();
+      const originalText = $btn.html();
+      
+      if (!productLinks) {
+        showNotification('Please enter product links', 'warning');
+        return;
+      }
+      
+      if (!importTeam) {
+        showNotification('Please select a team', 'warning');
+        return;
+      }
+      
+      console.log({team: importTeam, productLinks: productLinks})
+      
+      // Show loading state
+      $btn.html('<i class="fas fa-spinner fa-spin"></i> Importing...').prop('disabled', true);
+      
+      // Make AJAX request
+      $.ajax({
+        url: '/products/import-links',
+        type: 'POST',
+        data: {
+          team: importTeam,
+          productLinks: productLinks
+        },
+        success: function(data) {
+          if (data.success) {
+            const results = data.data;
+            
+            // Show notification
+            const summaryMessage = `Import completed: ${results.imported} success, ${results.skipped} duplicates, ${results.errors} errors`;
+            showNotification(summaryMessage, results.errors > 0 ? 'warning' : 'success');
+            
+            // Show detailed results in modal
+            if (results.details && results.details.length > 0) {
+              displayImportResults(results);
+            }
+            
+            // Clear form
+            $('#productLinks').val('');
+            $('#importTeam').val('');
+          } else {
+            throw new Error(data.message || 'Import failed');
+          }
+        },
+        error: function(xhr) {
+          const errorMessage = xhr.responseJSON?.message || 'Import failed';
+          showNotification(errorMessage, 'error');
+        },
+        complete: function() {
+          $btn.html(originalText).prop('disabled', false);
+        }
+      });
+    });
+    
+    // Function to display import results in modal
+    function displayImportResults(results) {
+      const successItems = results.details.filter(d => d.status === 'imported');
+      const skippedItems = results.details.filter(d => d.status === 'skipped');
+      const errorItems = results.details.filter(d => d.status === 'error');
+      
+      let resultsHtml = `
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <div class="card border-success">
+              <div class="card-body text-center">
+                <h5 class="text-success">${results.imported}</h5>
+                <p class="mb-0">Imported</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-warning">
+              <div class="card-body text-center">
+                <h5 class="text-warning">${results.skipped}</h5>
+                <p class="mb-0">Duplicates</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-danger">
+              <div class="card-body text-center">
+                <h5 class="text-danger">${results.errors}</h5>
+                <p class="mb-0">Errors</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      if (successItems.length > 0) {
+        resultsHtml += `
+          <h6 class="text-success mb-2">Imported Successfully:</h6>
+          <div class="mb-3" style="max-height: 150px; overflow-y: auto;">
+            ${successItems.map(item => `<div class="text-success small">✓ ${item.link}</div>`).join('')}
+          </div>
+        `;
+      }
+      
+      if (skippedItems.length > 0) {
+        resultsHtml += `
+          <h6 class="text-warning mb-2">Duplicates Skipped:</h6>
+          <div class="mb-3" style="max-height: 150px; overflow-y: auto;">
+            ${skippedItems.map(item => `<div class="text-warning small">⚠ ${item.link}</div>`).join('')}
+          </div>
+        `;
+      }
+      
+      if (errorItems.length > 0) {
+        resultsHtml += `
+          <h6 class="text-danger mb-2">Errors:</h6>
+          <div class="mb-3" style="max-height: 150px; overflow-y: auto;">
+            ${errorItems.map(item => `<div class="text-danger small">✗ ${item.link}<br><small>${item.error}</small></div>`).join('')}
+          </div>
+        `;
+      }
+      
+      $('#importResultsContent').html(resultsHtml);
+      $('#importResultsModal').modal('show');
+    }
+    
+  });
+</script> 

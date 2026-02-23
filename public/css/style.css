@@ -1,0 +1,180 @@
+/* Main layout styles */
+body {
+  display: flex;
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Sidebar styles */
+.sidebar {
+  width: 250px;
+  background-color: #333;
+  color: #fff;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header .logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  margin-right: 10px;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+
+.sidebar-menu {
+  padding: 15px 0;
+}
+
+.menu-group {
+  margin-bottom: 15px;
+}
+
+/* Add these styles to your existing CSS file */
+
+/* Menu item styling */
+.menu-item {
+  margin-bottom: 10px;
+}
+.ellipsis {
+  max-width: 240px;      /* tùy ý */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Menu item header styling */
+.menu-item-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.menu-item-header:hover {
+  background-color: #444;
+}
+
+.menu-item-header.active {
+  background-color: #007bff;
+}
+
+.menu-item-header i {
+  margin-right: 10px;
+}
+
+/* Direct link styling for menu items without submenu */
+a.menu-item-header {
+  text-decoration: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+}
+
+a.menu-item-header:hover {
+  background-color: #444;
+  color: #fff;
+  text-decoration: none;
+}
+
+.menu-link i {
+  margin-right: 10px;
+}
+
+/* Sidebar footer styling */
+.sidebar-footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  color: #ff6b6b;
+  text-decoration: none;
+  padding: 10px 15px;
+  transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #ff6b6b;
+  color: #fff;
+}
+
+.logout-btn i {
+  margin-right: 10px;
+}
+
+.menu-item-header .fa-chevron-right {
+  margin-left: auto;
+  transition: transform 0.3s;
+}
+
+.menu-item-header.active .fa-chevron-right {
+  transform: rotate(90deg);
+}
+
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  background-color: #444;
+}
+
+.submenu-item {
+  padding: 8px 15px 8px 40px;
+  display: block;
+  color: #ddd;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.submenu-item:hover {
+  background-color: #555;
+  color: #fff;
+}
+
+.submenu-item.active {
+  background-color: #555;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Main content styles */
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+  
+  .main-content {
+    margin-left: 200px;
+  }
+}
