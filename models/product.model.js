@@ -31,10 +31,10 @@ const productSchema = new mongoose.Schema({
   account_uploaded_video: { type: mongoose.Schema.Types.ObjectId, ref: 'ShopeeAccount', default: null },
   isCreatedVideo: { type: Boolean, default: false },
   statusUpVideo: { type: String, default: "No_Info" },
-  imgChecked: {type: String, default: ""},
   isChecked: {type: Boolean, default: false},
   descriptions: {type: String, default: ""},
-
+  bestImageUrl: {type: String, default: ""},
+  bestImageScore: {type: Number, default: 0},
 }, { timestamps: true });
 
 productSchema.index({ shopee_account: 1 });

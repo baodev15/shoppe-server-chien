@@ -113,7 +113,6 @@ app.use(protectRoute);
 // Protected routes
 const accountsRoutes = require('./routes/accounts');
 const productsRoutes = require('./routes/products');
-const shopeeAccountsRoutes = require('./routes/shopeeAccounts');
 
 // Apply team access middleware to routes that need it
 app.use('/shopee-accounts', teamAccessMiddleware, accountsRoutes);

@@ -227,7 +227,7 @@ exports.getForCheckInfo = async (req, res) => {
 
 exports.updateInfoProduct = async (req, res) => {
   try {
-    const {item_id, shop_id, name, rating_star, shop_rating, price, sold, liked_count, default_commission_rate, seller_commission_rate, product_link} = req.body;
+    const {item_id, shop_id, name, rating_star, shop_rating, price, sold, liked_count, default_commission_rate, seller_commission_rate, product_link, bestImageUrl, bestImageScore} = req.body;
     const product = await Product.findByIdAndUpdate(req.params.id, {
       item_id,
       shop_id,
@@ -242,6 +242,8 @@ exports.updateInfoProduct = async (req, res) => {
       product_link,
       isChecked: true,
       statusUpVideo: "Checked",
+      bestImageUrl, 
+      bestImageScore
     }, {
       new: true,
     });
