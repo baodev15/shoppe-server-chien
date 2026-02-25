@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsLayouts = require('express-ejs-layouts');
+const cors = require('cors');
 const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -36,6 +37,14 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 app.use(flash());
+
+// Configure CORS for API routes
+app.use('/api', cors({
+  origin: ['https://affiliate.shopee.vn', 'https://shopee.vn', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // Add this middleware to make flash messages available to all views
 app.use((req, res, next) => {

@@ -192,25 +192,9 @@ exports.getForCheckInfo = async (req, res) => {
       statusUpVideo: "No_Info"
     };
     
-    // Add id_team condition only if provided and valid
+    // Add id_team condition only if provided
     if (id_team) {
-      try {
-        // Validate if id_team is a valid ObjectId
-        const mongoose = require('mongoose');
-        if (mongoose.Types.ObjectId.isValid(id_team)) {
-          queryConditions.team = id_team;
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid id_team format"
-          });
-        }
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid id_team format"
-        });
-      }
+      queryConditions.team = id_team;
     }
     
     const product = await Product.findOneAndUpdate(
@@ -256,30 +240,53 @@ exports.getForCheckInfo = async (req, res) => {
 
 exports.updateInfoProduct = async (req, res) => {
   try {
-    const {item_id, shop_id, name, rating_star, shop_rating, price, sold, liked_count, default_commission_rate, seller_commission_rate, product_link, bestImageUrl, bestImageScore} = req.body;
-    const product = await Product.findByIdAndUpdate(req.params.id, {
-      item_id,
-      shop_id,
-      name,
-      rating_star,
-      shop_rating,
-      price,
-      sold,
-      liked_count,
-      default_commission_rate,
-      seller_commission_rate,
-      product_link,
-      isChecked: true,
-      statusUpVideo: "Checked",
-      bestImageUrl, 
-      bestImageScore
-    }, {
-      new: true,
+    const {item_id_olb, item_id, shop_id, name, rating_star, shop_rating, price, sold, liked_count, default_commission_rate, seller_commission_rate, product_link, bestImageUrl, bestImageScore} = req.body;
+    
+    // Find product by item_id instead of _id
+    const product = await Product.findOneAndUpdate(
+      { item_id: item_id_olb }, // Find by item_id
+      {
+        item_id,
+        shop_id,
+        name,
+        rating_star,
+        shop_rating,
+        price,
+        sold,
+        liked_count,
+        default_commission_rate,
+        seller_commission_rate,
+        product_link,
+        isChecked: true,
+        statusUpVideo: "Checked",
+        bestImageUrl, 
+        bestImageScore,
+        updatedAt: new Date()
+      }, 
+      {
+        new: true, // Return updated document
+        runValidators: true
+      }
+    );
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Product not found with item_id: " + item_id 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: product,
+      message: "Product info updated successfully"
     });
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.json(product);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error("Error updating product info:", err);
+    res.status(400).json({ 
+      success: false, 
+      message: err.message 
+    });
   }
 }
 
