@@ -33,20 +33,28 @@
         .main-content-wrapper {
             flex: 1;
             margin-left: 10px;
-            overflow-y: auto;
-            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
             height: 100vh;
             transition: margin-left 0.3s ease;
+        }
+        
+        .header-section {
+            flex-shrink: 0;
+        }
+        
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
         }
         
         body.sidebar-collapsed .main-content-wrapper {
             margin-left: 30px;
         }
         
-        .main-content {
-            min-height: 100vh;
-            padding: 10px ;
-        }
+
         
         /* Scale down Bootstrap components */
         .btn {
@@ -127,6 +135,31 @@
         <%- include('../partials/sidebar') %>
         
         <div class="main-content-wrapper">
+            <!-- Header Section -->
+            <header class="header-section" style="background-color: #fff; border-bottom: 1px solid #e0e0e0; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="header-title">
+                  
+                </div>
+                <div class="user-info" style="display: flex; align-items: center; gap: 15px;">
+                    <% if (locals.user) { %>
+                        <% if (user.role === 'admin') { %>
+                            <span class="badge bg-danger" style="font-size: 12px;">Admin</span>
+                        <% } else { %>
+                            <span class="user-name" style="color: #555; font-size: 14px;">
+                                <i class="fas fa-user" style="margin-right: 5px;"></i>
+                                Xin Chào <%= user.username %>
+                            </span>
+                            <% if (user.team && user.team._id) { %>
+                                <span class="team-id badge bg-primary" style="font-size: 12px;" title="Team ID">
+                                    <i class="fas fa-users" style="margin-right: 3px;"></i>
+                                    <%= user.team._id %>
+                                </span>
+                            <% } %>
+                        <% } %>
+                    <% } %>
+                </div>
+            </header>
+            
             <div class="main-content">
                 <%- body %>
             </div>

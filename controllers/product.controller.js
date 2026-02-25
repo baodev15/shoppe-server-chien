@@ -184,11 +184,37 @@ exports.getForCheckInfo = async (req, res) => {
   try {
     // Use atomic findOneAndUpdate to prevent race conditions
     // This ensures only one request can get and update the product at a time
+    const id_team = req.query.id_team;
+    
+    // Build dynamic query conditions
+    const queryConditions = {
+      isChecked: false,
+      statusUpVideo: "No_Info"
+    };
+    
+    // Add id_team condition only if provided and valid
+    if (id_team) {
+      try {
+        // Validate if id_team is a valid ObjectId
+        const mongoose = require('mongoose');
+        if (mongoose.Types.ObjectId.isValid(id_team)) {
+          queryConditions.team = id_team;
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid id_team format"
+          });
+        }
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid id_team format"
+        });
+      }
+    }
+    
     const product = await Product.findOneAndUpdate(
-      {
-        isChecked: false,
-        statusUpVideo: "No_Info"
-      },
+      queryConditions,
       {
         $set: { 
           statusUpVideo: "Checking",
@@ -203,9 +229,12 @@ exports.getForCheckInfo = async (req, res) => {
     );
 
     if (!product) {
+      const message = id_team 
+        ? `No unchecked products found with No_Info status for team ${id_team}`
+        : "No unchecked products found with No_Info status";
       return res.status(404).json({
         success: false,
-        message: "No unchecked products found with No_Info status"
+        message: message
       });
     }
 
