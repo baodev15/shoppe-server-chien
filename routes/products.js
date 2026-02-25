@@ -145,6 +145,9 @@ router.get('/', async (req, res) => {
       formatPrice: (price) => {
         return (price / 100000).toLocaleString('en-US', { style: 'currency', currency: 'VND' });
       },
+      formatPriceDefault: (price) => {
+        return (price).toLocaleString('en-US', { style: 'currency', currency: 'VND' });
+      },
       buildQueryString
     });
   } catch (error) {

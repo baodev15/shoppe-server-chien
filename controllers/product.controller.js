@@ -261,7 +261,7 @@ exports.updateInfoProduct = async (req, res) => {
         statusUpVideo: "Checked",
         bestImageUrl, 
         bestImageScore,
-        commission_rate: commission_rate,
+        commission_rate,
         updatedAt: new Date()
       }, 
       {

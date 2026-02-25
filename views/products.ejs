@@ -1,4 +1,4 @@
-<div class="container-fluid py-4">
+<div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3">Products Management</h1>
     <div>
@@ -217,14 +217,18 @@
         <table class="table table-hover table-striped mb-0">
           <thead class="table-dark">
             <tr>
-              <th width="5%">#</th>
-              <th width="10%">Item ID</th>
-              <th width="8%">Shop ID</th>
+              <th width="3%">#</th>
+              <th width="5%">Item ID</th>
+              <th width="5%">Shop ID</th>
               <th width="25%">Name</th>
-              <th width="8%">Rating</th>
-              <th width="10%">Price</th>
-              <th width="8%">Sold</th>
-              <th width="8%">Team</th>
+              <th width="8">Rating</th>
+              <th width="4%">Shop Rating</th>
+              <th width="8%">Price</th>
+              <th width="5%">Sold</th>
+              <th width="5%">Commission (VNĐ)</th>
+              <th width="5%">Commission (%)</th>
+              <th width="5%">Team</th>
+              <th width="8%">Image</th>
               <th width="8%">Video Created</th>
               <th width="8%">Video Status</th>
               <th width="8%">Actions</th>
@@ -236,7 +240,7 @@
                 <tr>
                   <td><%= ((currentPage - 1) * limit) + index + 1 %></td>
                   <td>
-                    <code><%= product.item_id %></code>
+                    <span class="text-muted"><%= product.item_id %></span>
                   </td>
                   <td><%= product.shop_id %></td>
                   <td>
@@ -254,6 +258,15 @@
                     <% } %>
                   </td>
                   <td>
+                    <% if (product.shop_rating) { %>
+                      <span class="badge bg-primary">
+                        <%= product.shop_rating.toFixed(1) %> <i class="fas fa-star"></i>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                  <td>
                     <span class="text-success fw-bold">
                       <%= formatPrice(product.price) %>
                     </span>
@@ -264,6 +277,24 @@
                     </span>
                   </td>
                   <td>
+                    <% if (product.commission_rate) { %>
+                      <span class="badge bg-success">
+                        <%= formatPriceDefault(product.commission_rate) %>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (product.default_commission_rate) { %>
+                      <span class="badge bg-warning text-dark">
+                        <%= product.default_commission_rate %> <i class="fas fa-percentage"></i>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                  <td>
                     <% if (product.team) { %>
                       <span class="badge bg-secondary"><%= product.team.name || 'Team' %></span>
                     <% } else { %>
@@ -271,10 +302,13 @@
                     <% } %>
                   </td>
                   <td>
-                    <% if (product.isCreatedVideo) { %>
-                      <span class="badge bg-success">Yes</span>
+                    <% if (product.bestImageUrl) { %>
+                      <img src="<%= product.bestImageUrl %>" alt="Product" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;" 
+                           onclick="window.open('<%= product.bestImageUrl %>', '_blank')" title="Click to view full image">
                     <% } else { %>
-                      <span class="badge bg-secondary">No</span>
+                      <div class="text-muted text-center" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; border-radius: 4px;">
+                        <i class="fas fa-image" style="font-size: 20px;"></i>
+                      </div>
                     <% } %>
                   </td>
                   <td>
@@ -286,6 +320,14 @@
                       <%= product.statusUpVideo %>
                     </span>
                   </td>
+                   <td>
+                    <% if (product.isCreatedVideo) { %>
+                      <span class="badge bg-success">Yes</span>
+                    <% } else { %>
+                      <span class="badge bg-secondary">No</span>
+                    <% } %>
+                  </td>
+                 
                   <td>
                     <div class="btn-group btn-group-sm">
                       <a href="<%= product.product_link %>" target="_blank" class="btn btn-outline-primary" title="View on Shopee">
@@ -301,7 +343,7 @@
               <% }); %>
             <% } else { %>
               <tr>
-                <td colspan="11" class="text-center text-muted py-4">
+                <td colspan="14" class="text-center text-muted py-4">
                   <i class="fas fa-inbox fa-3x mb-3"></i>
                   <p>No products found</p>
                 </td>
