@@ -35,6 +35,7 @@ const productSchema = new mongoose.Schema({
   descriptions: {type: String, default: ""},
   bestImageUrl: {type: String, default: ""},
   bestImageScore: {type: Number, default: 0},
+  commission_rate: {type: Number, default: 0},
 }, { timestamps: true });
 
 productSchema.index({ shopee_account: 1 });

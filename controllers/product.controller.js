@@ -240,7 +240,7 @@ exports.getForCheckInfo = async (req, res) => {
 
 exports.updateInfoProduct = async (req, res) => {
   try {
-    const {item_id_olb, item_id, shop_id, name, rating_star, shop_rating, price, sold, liked_count, default_commission_rate, seller_commission_rate, product_link, bestImageUrl, bestImageScore} = req.body;
+    const {item_id_olb, item_id, shop_id, name, rating_star, shop_rating, price, sold, liked_count, default_commission_rate, seller_commission_rate, product_link, bestImageUrl, bestImageScore, commission_rate} = req.body;
     
     // Find product by item_id instead of _id
     const product = await Product.findOneAndUpdate(
@@ -261,6 +261,7 @@ exports.updateInfoProduct = async (req, res) => {
         statusUpVideo: "Checked",
         bestImageUrl, 
         bestImageScore,
+        commission_rate: commission_rate,
         updatedAt: new Date()
       }, 
       {
