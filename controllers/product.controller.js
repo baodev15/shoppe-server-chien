@@ -293,13 +293,20 @@ exports.updateInfoProduct = async (req, res) => {
 
 exports.getForCreateVideo = async (req, res) => {
   try {
-    // Use atomic findOneAndUpdate to prevent race conditions
-    // This ensures only one request can get and update the product at a time
+    const id_team = req.query.id_team;
+    // Build dynamic query conditions
+    const queryConditions = {
+      isChecked: true,
+      statusUpVideo: "Checked"
+    };
+    
+    // Add id_team condition only if provided
+    if (id_team) {
+      queryConditions.team = id_team;
+    }
+    
     const product = await Product.findOneAndUpdate(
-      {
-        isChecked: true,
-        statusUpVideo: "Checked"
-      },
+      queryConditions,
       {
         $set: { 
           statusUpVideo: "Creating",
