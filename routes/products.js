@@ -46,6 +46,15 @@ router.get('/', async (req, res) => {
     
     // Build filter from query parameters
     const filter = {};
+     
+    // Role-based filtering: users can only see their team's products
+    if (!req.user) {
+      // If no user is logged in, don't show any products
+      filter._id = { $exists: false }; // This will return empty results
+    } else if (req.user.role !== 'admin') {
+      // Regular users can only see their team's products
+      filter.team = req.user.team;
+    }
     
     // Text filters
     if (req.query.item_id) {
@@ -87,9 +96,14 @@ router.get('/', async (req, res) => {
       filter.statusUpVideo = req.query.statusUpVideo;
     }
     
-    // Team filter
+    // Team filter - only apply if user is admin or filtering their own team
     if (req.query.team) {
-      filter.team = req.query.team;
+      if (req.user && req.user.role === 'admin') {
+        filter.team = req.query.team;
+      } else if (req.user && req.user.team && req.query.team === req.user.team.toString()) {
+        filter.team = req.query.team;
+      }
+      // If user tries to filter a different team, ignore the filter (security)
     }
     
     // Get total count for pagination
@@ -105,8 +119,21 @@ router.get('/', async (req, res) => {
       .skip(skip)
       .limit(limit);
     
-    // Get teams for filter dropdown
-    const teams = await Team.find().sort({ name: 1 });
+    // Get teams for filter dropdown - filter based on user role
+    let teams;
+    if (!req.user) {
+      // No user logged in - show no teams
+      teams = [];
+    } else if (req.user.role === 'admin') {
+      // Admin can see all teams
+      teams = await Team.find().sort({ name: 1 });
+    } else if (req.user.team) {
+      // Regular users can only see their own team
+      teams = await Team.find({ _id: req.user.team }).sort({ name: 1 });
+    } else {
+      // User exists but has no team assigned
+      teams = [];
+    }
     
     // Handle import messages from query parameters
     let message = null;
@@ -227,7 +254,7 @@ router.post('/import-links', async (req, res) => {
           for_admin: true,
           team: team,
           isCreatedVideo: false,
-          statusUpVideo: 'Chưa cập nhật',
+          statusUpVideo: 'No_Info',
           times_used: 0
         };
         

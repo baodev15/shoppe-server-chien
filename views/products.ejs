@@ -156,7 +156,7 @@
               <label for="statusUpVideo" class="form-label">Video Status</label>
               <select class="form-select" id="statusUpVideo" name="statusUpVideo">
                 <option value="">All Status</option>
-                <option value="Chưa cập nhật" <%= query.statusUpVideo === 'Chưa cập nhật' ? 'selected' : '' %>>Chưa cập nhật</option>
+                <option value="No_Info" <%= query.statusUpVideo === 'No_Info' ? 'selected' : '' %>>No_Info</option>
                 <option value="Đã upload" <%= query.statusUpVideo === 'Đã upload' ? 'selected' : '' %>>Đã upload</option>
                 <option value="Đang xử lý" <%= query.statusUpVideo === 'Đang xử lý' ? 'selected' : '' %>>Đang xử lý</option>
                 <option value="Lỗi" <%= query.statusUpVideo === 'Lỗi' ? 'selected' : '' %>>Lỗi</option>
@@ -214,7 +214,7 @@
         if (Array.isArray(products)) {
           products.forEach(function(p) {
             var s = p.statusUpVideo || '';
-            if (s === 'Chưa cập nhật') s = 'No_Info';
+            if (s === 'No_Info') s = 'No_Info';
             else if (s === 'Đang xử lý') s = 'Checking';
             else if (s === 'Đã upload') s = 'Uploaded';
             if (counts[s] !== undefined) counts[s]++;
@@ -337,7 +337,7 @@
                     <% } %>
                   </td>
                   <td>
-                    <span class="badge <%= product.statusUpVideo === 'Chưa cập nhật' ? 'bg-secondary' : 
+                    <span class="badge <%= product.statusUpVideo === 'No_Info' ? 'bg-secondary' : 
                                          product.statusUpVideo === 'Đã upload' ? 'bg-success' : 
                                          product.statusUpVideo === 'Đang xử lý' ? 'bg-warning text-dark' : 
                                          product.statusUpVideo === 'Lỗi' ? 'bg-danger' : 
