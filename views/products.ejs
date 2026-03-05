@@ -209,25 +209,13 @@
 
   <div class="row mb-3">
     <div class="col-12">
-      <% 
-        var counts = {No_Info:0, Checking:0, Checked:0, Created:0, Uploaded:0};
-        if (Array.isArray(products)) {
-          products.forEach(function(p) {
-            var s = p.statusUpVideo || '';
-            if (s === 'No_Info') s = 'No_Info';
-            else if (s === 'Đang xử lý') s = 'Checking';
-            else if (s === 'Đã upload') s = 'Uploaded';
-            if (counts[s] !== undefined) counts[s]++;
-          });
-        }
-      %>
       <div class="d-flex flex-wrap gap-2">
-        <span class="badge bg-dark">Tổng: <%= totalItems %></span>
-        <span class="badge bg-secondary">No_Info: <%= counts.No_Info %></span>
-        <span class="badge bg-warning text-dark">Checking: <%= counts.Checking %></span>
-        <span class="badge bg-info text-dark">Checked: <%= counts.Checked %></span>
-        <span class="badge bg-primary">Created: <%= counts.Created %></span>
-        <span class="badge bg-success">Uploaded: <%= counts.Uploaded %></span>
+        <span class="badge bg-dark">Tổng: <%= countItems %></span>
+        <span class="badge bg-secondary">No_Info: <%= count_NoInfo %></span>
+        <span class="badge bg-warning text-dark">Checking: <%= count_Checking %></span>
+        <span class="badge bg-info text-dark">Checked: <%= count_Checked %></span>
+        <span class="badge bg-primary">Created: <%= count_Created %></span>
+        <span class="badge bg-success">Uploaded: <%= count_Uploaded %></span>
       </div>
     </div>
   </div>

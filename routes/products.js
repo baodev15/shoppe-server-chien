@@ -157,6 +157,14 @@ router.get('/', async (req, res) => {
       params.set('page', pageNum);
       return `/products?${params.toString()}`;
     };
+    const filter_team = req.user.role === 'admin' ? {} : { team: req.user.team };
+    const count_NoInfo = await Product.countDocuments({ statusUpVideo: 'No_Info', ...filter_team });
+    const count_Checking = await Product.countDocuments({ statusUpVideo: 'Checking', ...filter_team });
+    const count_Checked = await Product.countDocuments({ statusUpVideo: 'Checked', ...filter_team });
+    const count_Created = await Product.countDocuments({ statusUpVideo: 'Created', ...filter_team });
+    const count_Uploaded = await Product.countDocuments({ statusUpVideo: 'Uploaded', ...filter_team });
+    const countItems =  await Product.countDocuments({ ...filter_team });
+
     
     res.render('products', {
       products,
@@ -169,6 +177,12 @@ router.get('/', async (req, res) => {
       activePage: 'products',
       title: 'Products Management',
       message,
+      countItems,
+      count_NoInfo,
+      count_Checking,
+      count_Checked,
+      count_Created,
+      count_Uploaded,
       formatPrice: (price) => {
         return (price / 100000).toLocaleString('en-US', { style: 'currency', currency: 'VND' });
       },

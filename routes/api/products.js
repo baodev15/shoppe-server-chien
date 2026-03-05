@@ -9,7 +9,7 @@ router.post('/admin', productController.addForAdmin);
 
 // Product info management routes
 router.get('/check', productController.getForCheckInfo);
-router.get('/info', productController.getProductInfo);
+
 router.put('/info', productController.updateInfoProduct);
 router.get('/create-video', productController.getForCreateVideo);
 router.post('/create-video', productController.updateCreateVideo);

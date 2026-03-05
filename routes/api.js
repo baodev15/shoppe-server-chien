@@ -6,6 +6,7 @@ const apiHeaderRouter = require('./apiHeader.routes');
 const productRouter = require('./product.routes');
 const commissionController = require('../controllers/commissionController');
 const liveSessionsRouter = require('./api/liveSessions');
+const xStatsigIdRouter = require('./api/xStatsigId.routes');
 
 // API key middleware
 const API_KEY = "Baole28372hd";
@@ -25,6 +26,10 @@ router.post('/live-sessions/start-live', apiKeyAuth, liveSessionController.start
 router.get('/live-sessions', apiKeyAuth, liveSessionController.getLiveSessions);
 router.use('/api-headers', apiKeyAuth, apiHeaderRouter);
 router.use('/products', apiKeyAuth, productRouter);
+
+router.use('/x-statsig-ids', apiKeyAuth, xStatsigIdRouter);
+
+
 
 // Add these routes to your existing api.js file
 router.get('/commission/fetch-all', commissionController.fetchAllAccountsCommissionData);
