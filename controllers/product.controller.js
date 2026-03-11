@@ -346,7 +346,9 @@ exports.getForCreateVideo = async (req, res) => {
 exports.updateCreateVideo = async (req, res) => {
   try {
     const {is_created} = req.body;
-    const product = await Product.findByIdAndUpdate(req.params.id, {
+    console.log(is_created);
+    console.log(req.query.id);
+    const product = await Product.findByIdAndUpdate(req.query.id, {
       statusUpVideo: is_created ? "Created" : "Created_Failed",
     }, {
       new: true,
