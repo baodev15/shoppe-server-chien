@@ -149,6 +149,22 @@ router.get('/', async (req, res) => {
         type: 'error',
         text: 'Failed to import products. Please check the server logs.'
       };
+    } else if (req.query.handleSuccess) {
+      const count = req.query.count || 0;
+      const actionText = req.query.handleSuccess === 'checking_to_no_info'
+        ? 'Normalized status from Checking to No_Info'
+        : req.query.handleSuccess === 'creating_to_checked'
+          ? 'Normalized status from Creating to Checked'
+          : 'Status normalization completed';
+      message = {
+        type: 'success',
+        text: `${actionText}. Updated ${count} products.`
+      };
+    } else if (req.query.handleError) {
+      message = {
+        type: 'error',
+        text: req.query.handleError
+      };
     }
     
     // Helper function to build query string for pagination links
@@ -194,6 +210,55 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).send('Server error');
+  }
+});
+
+router.post('/handle-status', async (req, res) => {
+  try {
+    const { action, team } = req.body;
+    let statusFilter;
+    let nextStatus;
+
+    if (action === 'checking_to_no_info') {
+      statusFilter = { $regex: 'Checking', $options: 'i' };
+      nextStatus = 'No_Info';
+    } else if (action === 'creating_to_checked') {
+      statusFilter = { $regex: 'Creating', $options: 'i' };
+      nextStatus = 'Checked';
+    } else {
+      return res.redirect('/products?handleError=Invalid status normalization action');
+    }
+
+    const teamFilter = {};
+    if (req.user && req.user.role === 'admin') {
+      if (team) {
+        teamFilter.team = team;
+      }
+    } else if (req.user && req.user.team) {
+      teamFilter.team = req.user.team;
+    }
+
+    const result = await Product.updateMany(
+      {
+        ...teamFilter,
+        statusUpVideo: statusFilter
+      },
+      {
+        $set: { statusUpVideo: nextStatus }
+      }
+    );
+
+    const params = new URLSearchParams({
+      handleSuccess: action,
+      count: String(result.modifiedCount || 0)
+    });
+    if (req.user && req.user.role === 'admin' && team) {
+      params.set('team', team);
+    }
+    return res.redirect(`/products?${params.toString()}`);
+  } catch (error) {
+    console.error('Error normalizing product statuses:', error);
+    return res.redirect('/products?handleError=Failed to normalize status');
   }
 });
 

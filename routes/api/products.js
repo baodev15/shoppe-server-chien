@@ -16,12 +16,13 @@ router.post('/create-video', productController.updateCreateVideo);
 router.get('/upload-video', productController.getForUploadVideo);
 router.post('/upload-video', productController.updateUploadVideo);
 
+
+
 // Routes with ID parameter should be last to avoid conflicts
 router.get('/:id', productController.getProductById);
 router.put('/:id', productController.updateProduct);
 router.delete('/:id', productController.deleteProduct);
 
-// New import routes
-router.post('/import', productController.importProducts);
+
 
 module.exports = router;

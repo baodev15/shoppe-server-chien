@@ -33,7 +33,7 @@
       </div>
       <div class="submenu">
       
-        <% if (locals.user && locals.user.role === 'admin') { %>
+        <% if (locals.user && locals.user.role === 'admin' || locals.user.role === 'super_admin') { %>
           <a href="/admin/accounts" class="submenu-item <%= locals.activePage === 'admin-accounts' ? 'active' : '' %>">
             <i class="fas fa-user-cog"></i>
             <span>Quản lý tài khoản</span>
@@ -50,6 +50,14 @@
       </div>
     </div>
     
+    <% if(locals.user && locals.user.role === 'super_admin') { %>
+       <div class="menu-group">
+        <a href="/admin/license-keys" class="submenu-item <%= locals.activePage === 'admin-license-keys' ? 'active' : '' %>">
+          <i class="fas fa-key"></i>
+          <span>Quản lý License Key</span>
+        </a>
+      </div>
+      <% } %>
     <!-- Fix for Thống kê doanh thu menu item --
     
     <!-- Revenue Statistics menu item -->

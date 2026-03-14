@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const teamController = require('../controllers/team.controller');
+const licenseKeyController = require('../controllers/licenseKey.controller');
 
 // User management routes
 router.get('/accounts', adminController.getUsers);
@@ -19,4 +20,24 @@ router.post('/teams', teamController.createTeam);
 router.put('/teams/:id', teamController.updateTeam);
 router.delete('/teams/:id', teamController.deleteTeam);
 
+
+
+// Team access middleware - restrict data access based on user's team
+const SuperAccessMiddleware = (req, res, next) => {
+  // Skip for admin users - they can see all data
+  if (req.user && (req.user.role === 'super_admin')) {
+    return next();
+  }else {
+    return res.status(403).json({ message: 'Super admin access required' });
+  }
+};
+
+
+// License key management routes
+router.get('/license-keys',SuperAccessMiddleware, licenseKeyController.getLicenseKeys);
+router.get('/license-keys/new',SuperAccessMiddleware, licenseKeyController.getLicenseForm);
+router.get('/license-keys/:id/edit',SuperAccessMiddleware, licenseKeyController.getLicenseForm);
+router.post('/license-keys',SuperAccessMiddleware, licenseKeyController.createLicenseKey);
+router.put('/license-keys/:id',SuperAccessMiddleware, licenseKeyController.updateLicenseKey);
+router.delete('/license-keys/:id',SuperAccessMiddleware, licenseKeyController.deleteLicenseKey);
 module.exports = router;

@@ -100,7 +100,7 @@ const protectRoute = async (req, res, next) => {
 // Team access middleware - restrict data access based on user's team
 const teamAccessMiddleware = (req, res, next) => {
   // Skip for admin users - they can see all data
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'super_admin')) {
     return next();
   }
   

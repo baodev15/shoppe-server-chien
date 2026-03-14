@@ -12,7 +12,12 @@ router.post('/create-video', productController.updateCreateVideo);
 router.get('/upload-video', productController.getForUploadVideo);
 router.post('/upload-video', productController.updateUploadVideo);
 
-
+// New import routes
+router.get('/analytics', productController.getAnalytics);
+router.post('/analytics', productController.postAnalytics);
+router.post('/import', productController.importProducts);
+router.post('/import-multi', productController.importMultiProducts);
+ 
 router.post('/', productController.createProduct);
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);

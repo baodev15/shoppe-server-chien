@@ -217,6 +217,34 @@
         <span class="badge bg-primary">Created: <%= count_Created %></span>
         <span class="badge bg-success">Uploaded: <%= count_Uploaded %></span>
       </div>
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <form method="POST" action="/products/handle-status" class="mb-0">
+          <input type="hidden" name="action" value="checking_to_no_info">
+          <% if (query.team) { %>
+            <input type="hidden" name="team" value="<%= query.team %>">
+          <% } %>
+          <button
+            type="submit"
+            class="btn btn-sm btn-outline-warning"
+            onclick="return confirm('Chuẩn hóa lỗi Checking -> No_Info?')"
+          >
+            Chuẩn hóa lỗi Checking → No_Info
+          </button>
+        </form>
+        <form method="POST" action="/products/handle-status" class="mb-0">
+          <input type="hidden" name="action" value="creating_to_checked">
+          <% if (query.team) { %>
+            <input type="hidden" name="team" value="<%= query.team %>">
+          <% } %>
+          <button
+            type="submit"
+            class="btn btn-sm btn-outline-primary"
+            onclick="return confirm('Chuẩn hóa lỗi Creating -> Checked?')"
+          >
+            Chuẩn hóa lỗi Creating → Checked
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 

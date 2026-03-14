@@ -142,8 +142,8 @@
                 </div>
                 <div class="user-info" style="display: flex; align-items: center; gap: 15px;">
                     <% if (locals.user) { %>
-                        <% if (user.role === 'admin') { %>
-                            <span class="badge bg-danger" style="font-size: 12px;">Admin</span>
+                        <% if (locals.user.role === 'admin' || locals.user.role === 'super_admin') { %>
+                            <span class="badge bg-danger" style="font-size: 12px;"><%= locals.user.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span>
                         <% } else { %>
                             <span class="user-name" style="color: #555; font-size: 14px;">
                                 <i class="fas fa-user" style="margin-right: 5px;"></i>

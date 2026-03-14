@@ -32,6 +32,7 @@ exports.importProducts = async (req, res) => {
     }
 
     const productsData = req.body.products;
+    const id_team = req.body.id_team;
 
     // Track import statistics
     let importCount = 0;
@@ -46,6 +47,7 @@ exports.importProducts = async (req, res) => {
         const existingProduct = await Product.findOne({ item_id: productData.item_id });
 
         if (existingProduct) {
+          
           duplicateCount++;
           continue; // Skip this product
         }
@@ -58,16 +60,18 @@ exports.importProducts = async (req, res) => {
           rating_star: productData.rating_star,
           shop_rating: productData.shop_rating,
           // Convert price from string to number
-          price: parseInt(productData.price),
+          price: productData.price,
           sold: productData.sold,
           liked_count: productData.liked_count,
           // Extract numeric value from commission rates
-          default_commission_rate: parseFloat(productData.default_commission_rate.replace('%', '')),
-          seller_commission_rate: parseFloat(productData.seller_commission_rate.replace('%', '')),
+          default_commission_rate: productData.default_commission_rate,
+          seller_commission_rate: productData.seller_commission_rate,
           product_link: productData.product_link,
           // Set a default shopee_category_id
           shopee_category_id: productData.shopee_category_id || '0',
-          for_admin: true
+          team: id_team,
+          stock: productData.stock,
+          images: productData.images || [],
         };
 
         // Create and save the product
@@ -82,7 +86,11 @@ exports.importProducts = async (req, res) => {
         });
       }
     }
-
+    console.log('importCount:', importCount);
+    console.log('duplicateCount:', duplicateCount);
+    console.log('errorCount:', errorCount);
+    console.log('total:', productsData.length);
+    console.log('errorDetails:', errors.length > 0 ? errors : undefined);
     // Return JSON response with import results
     res.json({
       success: true,
@@ -237,6 +245,107 @@ exports.getForCheckInfo = async (req, res) => {
     });
   }
 }
+exports.getAnalytics = async (req, res) => {
+  try {
+    // Use atomic findOneAndUpdate to prevent race conditions
+    // This ensures only one request can get and update the product at a time
+    const id_team = req.query.id_team;
+    
+    // Build dynamic query conditions
+    const queryConditions = {
+      isChecked: false,
+      statusUpVideo: "No_Info",
+      images: { $exists: true, $ne: [] }
+    };
+    
+    // Add id_team condition only if provided
+    if (id_team) {
+      queryConditions.team = id_team;
+    }
+    
+    const product = await Product.findOneAndUpdate(
+      queryConditions,
+      {
+        $set: { 
+          statusUpVideo: "Analytics",
+          updatedAt: new Date()
+        }
+      },
+      {
+        sort: { createdAt: 1 }, // Get oldest first
+        new: true, // Return updated document
+        runValidators: true
+      }
+    );
+
+    if (!product) {
+      const message = id_team 
+        ? `No unchecked products found with No_Info status for team ${id_team}`
+        : "No unchecked products found with No_Info status";
+      return res.status(404).json({
+        success: false,
+        message: message
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: product,
+      message: "Product retrieved and status updated to Checking"
+    });
+
+  } catch (error) {
+    console.error("Error in getForCheckInfo:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get product for checking info",
+      error: error.message
+    });
+  }
+}
+
+exports.postAnalytics = async (req, res) => {
+  try {
+    const { bestImageUrl, bestImageScore, item_id} = req.body;
+    
+    // Find product by item_id instead of _id
+    const product = await Product.findOneAndUpdate(
+      { item_id: item_id }, // Find by item_id
+      {
+        isChecked: true,
+        statusUpVideo: "Checked",
+        bestImageUrl, 
+        bestImageScore,
+        updatedAt: new Date()
+      }, 
+      {
+        new: true, // Return updated document
+        runValidators: true
+      }
+    );
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Product not found with item_id: " + item_id 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: product,
+      message: "Product info updated successfully"
+    });
+  } catch (err) {
+    console.error("Error updating product info:", err);
+    res.status(400).json({ 
+      success: false, 
+      message: err.message 
+    });
+  }
+}
+
+
 
 exports.updateInfoProduct = async (req, res) => {
   try {
@@ -414,6 +523,23 @@ exports.updateUploadVideo = async (req, res) => {
     });
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+}
+
+exports.importMultiProducts = async (req, res) => {
+  try {
+    const { products } = req.body;
+    if (!products || products.length === 0) {
+      return res.status(400).json({ message: "No products provided" });
+    }
+    const importedProducts = await Product.insertMany(products);
+    res.status(201).json({
+      success: true,
+      data: importedProducts,
+      message: "Products imported successfully"
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
