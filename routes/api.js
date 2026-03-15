@@ -7,7 +7,7 @@ const productRouter = require('./product.routes');
 const commissionController = require('../controllers/commissionController');
 const liveSessionsRouter = require('./api/liveSessions');
 const xStatsigIdRouter = require('./api/xStatsigId.routes');
-
+const licenseKeyController = require('../controllers/licenseKey.controller');
 // API key middleware
 const API_KEY = "Baole28372hd";
 const apiKeyAuth = (req, res, next) => {
@@ -26,7 +26,7 @@ router.post('/live-sessions/start-live', apiKeyAuth, liveSessionController.start
 router.get('/live-sessions', apiKeyAuth, liveSessionController.getLiveSessions);
 router.use('/api-headers', apiKeyAuth, apiHeaderRouter);
 router.use('/products', apiKeyAuth, productRouter);
-
+router.get('/licenses/check', apiKeyAuth, licenseKeyController.checkLicenseKey);
 router.use('/x-statsig-ids', apiKeyAuth, xStatsigIdRouter);
 
 
