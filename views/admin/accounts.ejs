@@ -36,7 +36,7 @@
                 <td>
                   <a href="/admin/accounts/<%= user._id %>/edit" class="btn btn-sm btn-primary">Sửa</a>
                   <% if (user.role !== 'admin') { %>
-                    <button class="btn btn-sm btn-danger delete-user" data-id="<%= user._id %>">Xóa</button>
+                    <button class="btn btn-sm btn-danger delete-user" data-id="<%= user._id %>" data-username="<%= user.username %>">Xóa</button>
                   <% } %>
                 </td>
               </tr>
@@ -48,15 +48,26 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const deleteButtons = document.querySelectorAll('.delete-user');
     
     deleteButtons.forEach(button => {
-      button.addEventListener('click', function() {
+      button.addEventListener('click', async function() {
         const userId = this.getAttribute('data-id');
-        
-        if (confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+        const username = this.getAttribute('data-username') || '';
+
+        const confirmResult = await Swal.fire({
+          title: 'Xóa người dùng?',
+          text: `Bạn có chắc chắn muốn xóa người dùng "${username}"?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Xóa',
+          cancelButtonText: 'Hủy'
+        });
+
+        if (confirmResult.isConfirmed) {
           fetch(`/admin/accounts/${userId}`, {
             method: 'DELETE',
             headers: {
@@ -66,15 +77,30 @@
           .then(response => response.json())
           .then(data => {
             if (data.success) {
-              alert('Xóa người dùng thành công');
-              window.location.reload();
+              Swal.fire({
+                title: 'Thành công',
+                text: 'Xóa người dùng thành công',
+                icon: 'success',
+                timer: 1200,
+                showConfirmButton: false
+              }).then(() => {
+                window.location.reload();
+              });
             } else {
-              alert('Lỗi: ' + data.message);
+              Swal.fire({
+                title: 'Lỗi',
+                text: data.message || 'Không thể xóa người dùng',
+                icon: 'error'
+              });
             }
           })
           .catch(error => {
             console.error('Error:', error);
-            alert('Đã xảy ra lỗi khi xóa người dùng');
+            Swal.fire({
+              title: 'Lỗi',
+              text: 'Đã xảy ra lỗi khi xóa người dùng',
+              icon: 'error'
+            });
           });
         }
       });

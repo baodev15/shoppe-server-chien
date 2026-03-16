@@ -165,7 +165,7 @@ exports.deleteUser = async (req, res) => {
       });
     }
     
-    await user.remove();
+    await user.deleteOne();
     
     res.json({
       success: true,

@@ -153,7 +153,7 @@ exports.deleteTeam = async (req, res) => {
       });
     }
     
-    await team.remove();
+    await team.deleteOne();
     
     res.json({
       success: true,

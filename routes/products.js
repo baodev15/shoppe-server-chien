@@ -43,6 +43,7 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 100;
     const skip = (page - 1) * limit;
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
     
     // Build filter from query parameters
     const filter = {};
@@ -51,7 +52,7 @@ router.get('/', async (req, res) => {
     if (!req.user) {
       // If no user is logged in, don't show any products
       filter._id = { $exists: false }; // This will return empty results
-    } else if (req.user.role !== 'admin') {
+    } else if (!isPrivilegedUser) {
       // Regular users can only see their team's products
       filter.team = req.user.team;
     }
@@ -98,7 +99,7 @@ router.get('/', async (req, res) => {
     
     // Team filter - only apply if user is admin or filtering their own team
     if (req.query.team) {
-      if (req.user && req.user.role === 'admin') {
+      if (isPrivilegedUser) {
         filter.team = req.query.team;
       } else if (req.user && req.user.team && req.query.team === req.user.team.toString()) {
         filter.team = req.query.team;
@@ -124,7 +125,7 @@ router.get('/', async (req, res) => {
     if (!req.user) {
       // No user logged in - show no teams
       teams = [];
-    } else if (req.user.role === 'admin') {
+    } else if (isPrivilegedUser) {
       // Admin can see all teams
       teams = await Team.find().sort({ name: 1 });
     } else if (req.user.team) {
@@ -165,6 +166,17 @@ router.get('/', async (req, res) => {
         type: 'error',
         text: req.query.handleError
       };
+    } else if (req.query.deleteSuccess) {
+      const count = req.query.count || 0;
+      message = {
+        type: 'success',
+        text: `Deleted ${count} selected products.`
+      };
+    } else if (req.query.deleteError) {
+      message = {
+        type: 'error',
+        text: req.query.deleteError
+      };
     }
     
     // Helper function to build query string for pagination links
@@ -173,7 +185,12 @@ router.get('/', async (req, res) => {
       params.set('page', pageNum);
       return `/products?${params.toString()}`;
     };
-    const filter_team = req.user.role === 'admin' ? {} : { team: req.user.team };
+    const filter_team = {};
+    if (req.query.team) {
+      filter_team.team = req.query.team;
+    } else if (!isPrivilegedUser && req.user && req.user.team) {
+      filter_team.team = req.user.team;
+    }
     const count_NoInfo = await Product.countDocuments({ statusUpVideo: 'No_Info', ...filter_team });
     const count_Checking = await Product.countDocuments({ statusUpVideo: 'Checking', ...filter_team });
     const count_Checked = await Product.countDocuments({ statusUpVideo: 'Checked', ...filter_team });
@@ -216,6 +233,7 @@ router.get('/', async (req, res) => {
 router.post('/handle-status', async (req, res) => {
   try {
     const { action, team } = req.body;
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
     let statusFilter;
     let nextStatus;
 
@@ -230,7 +248,7 @@ router.post('/handle-status', async (req, res) => {
     }
 
     const teamFilter = {};
-    if (req.user && req.user.role === 'admin') {
+    if (isPrivilegedUser) {
       if (team) {
         teamFilter.team = team;
       }
@@ -252,13 +270,40 @@ router.post('/handle-status', async (req, res) => {
       handleSuccess: action,
       count: String(result.modifiedCount || 0)
     });
-    if (req.user && req.user.role === 'admin' && team) {
+    if (isPrivilegedUser && team) {
       params.set('team', team);
     }
     return res.redirect(`/products?${params.toString()}`);
   } catch (error) {
     console.error('Error normalizing product statuses:', error);
     return res.redirect('/products?handleError=Failed to normalize status');
+  }
+});
+
+router.post('/delete-selected', async (req, res) => {
+  try {
+    const idsRaw = req.body.ids;
+    const ids = Array.isArray(idsRaw) ? idsRaw : idsRaw ? [idsRaw] : [];
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+
+    if (!ids.length) {
+      return res.redirect('/products?deleteError=No products selected');
+    }
+
+    const deleteFilter = { _id: { $in: ids } };
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.redirect('/products?deleteError=Permission denied');
+      }
+      deleteFilter.team = req.user.team;
+    }
+
+    const result = await Product.deleteMany(deleteFilter);
+
+    return res.redirect(`/products?deleteSuccess=true&count=${result.deletedCount || 0}`);
+  } catch (error) {
+    console.error('Error deleting selected products:', error);
+    return res.redirect('/products?deleteError=Failed to delete selected products');
   }
 });
 
