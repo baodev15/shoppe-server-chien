@@ -15,6 +15,9 @@ const settingsRoutes = require('./routes/settings');
 const revenueStatsRoutes = require('./routes/revenueStats');
 
 const app = express();
+const SHOPEE_ORIGIN = (process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http')
+  ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn')
+  : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`;
 
 // Connect to MongoDB
 connectDB();
@@ -40,7 +43,7 @@ app.use(flash());
 
 // Configure CORS for API routes
 app.use('/api', cors({
-  origin: ['https://affiliate.shopee.vn', 'https://shopee.vn', 'http://localhost:3000'],
+  origin: ['https://affiliate.shopee.vn', SHOPEE_ORIGIN, 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

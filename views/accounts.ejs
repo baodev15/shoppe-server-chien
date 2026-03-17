@@ -279,10 +279,10 @@
         <div class="modal-body">
           <div class="mb-3">
             <label for="productLinks" class="form-label">Nhập link sản phẩm (mỗi link một dòng)</label>
-            <textarea class="form-control" id="productLinks" rows="10" placeholder="https://shopee.vn/product/158647903/2403800575&#10;https://shopee.vn/product/123456789/9876543210"></textarea>
+            <textarea class="form-control" id="productLinks" rows="10" placeholder="<%= ((process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http') ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn') : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`) %>/product/158647903/2403800575&#10;<%= ((process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http') ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn') : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`) %>/product/123456789/9876543210"></textarea>
           </div>
           <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> Mỗi link sản phẩm nhập trên một dòng mới. Ví dụ: https://shopee.vn/product/158647903/2403800575
+            <i class="fas fa-info-circle"></i> Mỗi link sản phẩm nhập trên một dòng mới. Ví dụ: <%= ((process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http') ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn') : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`) %>/product/158647903/2403800575
           </div>
           <div class="mt-2">
             <p>Tổng số link đã nhập: <span id="linkCount" class="fw-bold">0</span></p>

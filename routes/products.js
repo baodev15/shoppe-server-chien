@@ -8,7 +8,7 @@ const { getPaginationData } = require('../utils/pagination');
 // Helper function to extract shop_id and item_id from Shopee link
 function extractProductInfoFromLink(link) {
   try {
-    // Shopee link format: https://shopee.vn/product-name-i.shop_id.item_id
+    // Shopee link format: SHOPEE_ORIGIN/product-name-i.shop_id.item_id
     const match = link.match(/-i\.(\d+)\.(\d+)/);
     if (match) {
       return {
@@ -17,7 +17,7 @@ function extractProductInfoFromLink(link) {
       };
     }
     
-    // Alternative format: https://shopee.vn/product-name-i.item_id
+    // Alternative format: SHOPEE_ORIGIN/product-name-i.item_id
     const altMatch = link.match(/-i\.(\d+)$/);
     if (altMatch) {
       return {

@@ -1,5 +1,7 @@
 const Team = require('../models/team.model');
 const User = require('../models/user.model');
+const Product = require('../models/product.model');
+const mongoose = require('mongoose');
 
 // Get all teams
 exports.getTeams = async (req, res) => {
@@ -164,6 +166,50 @@ exports.deleteTeam = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi khi xóa team',
+      error: error.message
+    });
+  }
+};
+
+exports.getTeamLinkCounts = async (req, res) => {
+  try {
+    const teamIdsRaw = (req.query.teamIds || '')
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean);
+
+    const validTeamIds = teamIdsRaw
+      .filter(id => mongoose.Types.ObjectId.isValid(id))
+      .map(id => new mongoose.Types.ObjectId(id));
+
+    const matchConditions = {
+      team: { $ne: null },
+      product_link: { $exists: true, $ne: '' }
+    };
+
+    if (validTeamIds.length > 0) {
+      matchConditions.team.$in = validTeamIds;
+    }
+
+    const counts = await Product.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: '$team',
+          totalLinks: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: counts
+    });
+  } catch (error) {
+    console.error('Error fetching team link counts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi tải thống kê link theo team',
       error: error.message
     });
   }

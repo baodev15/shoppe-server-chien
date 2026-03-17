@@ -1,4 +1,7 @@
 const axios = require('axios');
+const SHOPEE_ORIGIN = (process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http')
+  ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn')
+  : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`;
 
 (async () => {
   try {
@@ -11,7 +14,8 @@ const axios = require('axios');
     'cache-control': 'no-cache, no-store', 
     'client-request-id': '2dc23afd-a631-48b5-b18c-99a95797474c.927', 
     };
-    const response = await axios.get('https://mall.shopee.vn/api/v4/generic_sharing/get_sharing_info?url=https://shopee.vn/a-i.807132655.45103071381', { headers });
+    const targetUrl = `${SHOPEE_ORIGIN}/a-i.807132655.45103071381`;
+    const response = await axios.get(`https://mall.shopee.vn/api/v4/generic_sharing/get_sharing_info?url=${encodeURIComponent(targetUrl)}`, { headers });
     console.log('data:', response.data);
   } catch (error) {
     console.error('Error fetching license keys:', error);

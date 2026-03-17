@@ -14,6 +14,7 @@ router.delete('/accounts/:id', adminController.deleteUser);
 
 // Team management routes
 router.get('/teams', teamController.getTeams);
+router.get('/teams/link-counts', teamController.getTeamLinkCounts);
 router.get('/teams/new', teamController.getTeamForm);
 router.get('/teams/:id/edit', teamController.getEditTeamForm);
 router.post('/teams', teamController.createTeam);

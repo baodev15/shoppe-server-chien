@@ -36,7 +36,7 @@
                 id="productLinks" 
                 name="productLinks" 
                 rows="10" 
-                placeholder="https://shopee.vn/product-name-i.12345.67890&#10;https://shopee.vn/another-product-i.54321.09876"
+                placeholder="<%= ((process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http') ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn') : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`) %>/product-name-i.12345.67890&#10;<%= ((process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http') ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn') : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`) %>/another-product-i.54321.09876"
                 required
               ></textarea>
               <small class="form-text text-muted">

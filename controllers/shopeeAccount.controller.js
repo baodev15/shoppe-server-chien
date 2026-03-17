@@ -6,6 +6,9 @@ const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const SHOPEE_ORIGIN = (process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http')
+  ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn')
+  : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`;
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -641,8 +644,8 @@ exports.addProducts = async (req, res) => {
           try {
               // Lọc link để lấy id_shop và id_item
               // Hỗ trợ nhiều định dạng URL Shopee
-              // Ví dụ: https://shopee.vn/product/158647903/2403800575
-              // hoặc: https://shopee.vn/Product-Name-i.158647903.2403800575
+              // Ví dụ: SHOPEE_ORIGIN/product/158647903/2403800575
+              // hoặc: SHOPEE_ORIGIN/Product-Name-i.158647903.2403800575
               
               let shopId, itemId;
               
@@ -783,7 +786,7 @@ exports.deleteNoInteraction = async (req, res) => {
 
       // Generate Shopee links
       const links = productsToDelete.map(product => 
-        `https://shopee.vn/product/${product.shop_id}/${product.item_id}`
+        `${SHOPEE_ORIGIN}/product/${product.shop_id}/${product.item_id}`
       );
       const ids = productsToDelete.map(product => 
         product.item_id
@@ -826,7 +829,7 @@ exports.deleteCartProducts = async (req, res) => {
 
     // Tạo danh sách links sản phẩm
     const links = productsToDelete.map(product => 
-      `https://shopee.vn/product/${product.shop_id}/${product.item_id}`
+      `${SHOPEE_ORIGIN}/product/${product.shop_id}/${product.item_id}`
     );
     
     const ids = productsToDelete.map(product => product.item_id);

@@ -400,7 +400,7 @@ exports.updateInfoProduct = async (req, res) => {
   }
 }
 
-exports.getForCreateVideo = async (req, res) => {
+exports. getForCreateVideo = async (req, res) => {
   try {
     const id_team = req.query.id_team;
     // Build dynamic query conditions

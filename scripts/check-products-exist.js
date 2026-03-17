@@ -3,6 +3,9 @@ const path = require('path');
 const mongoose = require('mongoose');
 const Product = require('../models/product.model');
 const ShopeeAccount = require('../models/shopeeAccount.model');
+const SHOPEE_ORIGIN = (process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http')
+  ? (process.env.SHOPEE_ORIGIN || 'https://shopee.vn')
+  : `https://${process.env.SHOPEE_ORIGIN || 'shopee.vn'}`;
 
 // Kết nối MongoDB
 const MONGO_URI = "mongodb+srv://doadmin:Y5omIP206nj438O1@db-mongodb-sgp1-95245-ce08c080.mongo.ondigitalocean.com/shopee-chien?replicaSet=db-mongodb-sgp1-95245&tls=true&authSource=admin";
@@ -25,7 +28,7 @@ async function addProductsToShopeeAccount() {
   try {
     console.log('Bắt đầu xử lý sản phẩm...');
     let products = await Product.find({ placed_orders: { $gt: 0 } }).sort({ placed_orders: -1 }).limit(100000);
-    let links = products.map(q => `https://shopee.vn/product/${q.shop_id}/${q.item_id}`);
+    let links = products.map(q => `${SHOPEE_ORIGIN}/product/${q.shop_id}/${q.item_id}`);
 
     // Lọc bỏ các links trùng lặp bằng cách sử dụng Set
     let uniqueLinks = [...new Set(links)];
