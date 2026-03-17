@@ -218,12 +218,12 @@
   <div class="row mb-3">
     <div class="col-12">
       <div class="d-flex flex-wrap gap-2">
-        <span class="badge bg-dark">Tổng: <%= countItems %></span>
-        <span class="badge bg-secondary">No_Info: <%= count_NoInfo %></span>
-        <span class="badge bg-warning text-dark">Checking: <%= count_Checking %></span>
-        <span class="badge bg-info text-dark">Checked: <%= count_Checked %></span>
-        <span class="badge bg-primary">Created: <%= count_Created %></span>
-        <span class="badge bg-success">Uploaded: <%= count_Uploaded %></span>
+        <span class="badge bg-dark">Tổng: <span id="summaryTotal">...</span></span>
+        <span class="badge bg-secondary">No_Info: <span id="summaryNoInfo">...</span></span>
+        <span class="badge bg-warning text-dark">Checking: <span id="summaryChecking">...</span></span>
+        <span class="badge bg-info text-dark">Checked: <span id="summaryChecked">...</span></span>
+        <span class="badge bg-primary">Created: <span id="summaryCreated">...</span></span>
+        <span class="badge bg-success">Uploaded: <span id="summaryUploaded">...</span></span>
       </div>
       <div class="d-flex flex-wrap gap-2 mt-2">
         <form method="POST" action="/products/handle-status" class="mb-0">
@@ -449,6 +449,37 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
   $(document).ready(function() {
+    function loadProductsSummary() {
+      const params = new URLSearchParams(window.location.search);
+      const team = params.get('team');
+      const query = new URLSearchParams();
+      if (team) {
+        query.set('team', team);
+      }
+      const endpoint = '/products/summary' + (query.toString() ? `?${query.toString()}` : '');
+
+      $.ajax({
+        url: endpoint,
+        type: 'GET',
+        success: function(response) {
+          if (!response || !response.success || !response.data) {
+            return;
+          }
+          const data = response.data;
+          $('#summaryTotal').text((data.total || 0).toLocaleString());
+          $('#summaryNoInfo').text((data.noInfo || 0).toLocaleString());
+          $('#summaryChecking').text((data.checking || 0).toLocaleString());
+          $('#summaryChecked').text((data.checked || 0).toLocaleString());
+          $('#summaryCreated').text((data.created || 0).toLocaleString());
+          $('#summaryUploaded').text((data.uploaded || 0).toLocaleString());
+        },
+        error: function() {
+          $('#summaryTotal, #summaryNoInfo, #summaryChecking, #summaryChecked, #summaryCreated, #summaryUploaded').text('N/A');
+        }
+      });
+    }
+    loadProductsSummary();
+
     // Auto-submit form when dropdown changes
     $('select:not(#pageSize):not(#importTeam)').on('change', function() {
       $('#filterForm').submit();

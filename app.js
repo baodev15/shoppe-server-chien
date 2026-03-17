@@ -158,7 +158,7 @@ app.listen(PORT, () => {
 // Initialize the commission cron job
 const commissionController = require('./controllers/commissionController');
 commissionController.initCommissionCronJob();
-
-
-
-
+const cronManagerService = require('./services/cronManager.service');
+cronManagerService.init().catch((error) => {
+  console.error('Cron manager init failed:', error.message);
+});

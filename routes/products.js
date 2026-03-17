@@ -185,20 +185,6 @@ router.get('/', async (req, res) => {
       params.set('page', pageNum);
       return `/products?${params.toString()}`;
     };
-    const filter_team = {};
-    if (req.query.team) {
-      filter_team.team = req.query.team;
-    } else if (!isPrivilegedUser && req.user && req.user.team) {
-      filter_team.team = req.user.team;
-    }
-    const count_NoInfo = await Product.countDocuments({ statusUpVideo: 'No_Info', ...filter_team });
-    const count_Checking = await Product.countDocuments({ statusUpVideo: 'Checking', ...filter_team });
-    const count_Checked = await Product.countDocuments({ statusUpVideo: 'Checked', ...filter_team });
-    const count_Created = await Product.countDocuments({ statusUpVideo: 'Created', ...filter_team });
-    const count_Uploaded = await Product.countDocuments({ statusUpVideo: 'Uploaded', ...filter_team });
-    const countItems =  await Product.countDocuments({ ...filter_team });
-
-    
     res.render('products', {
       products,
       teams,
@@ -210,12 +196,6 @@ router.get('/', async (req, res) => {
       activePage: 'products',
       title: 'Products Management',
       message,
-      countItems,
-      count_NoInfo,
-      count_Checking,
-      count_Checked,
-      count_Created,
-      count_Uploaded,
       formatPrice: (price) => {
         return (price / 100000).toLocaleString('en-US', { style: 'currency', currency: 'VND' });
       },
@@ -227,6 +207,48 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).send('Server error');
+  }
+});
+
+router.get('/summary', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const match = {};
+
+    if (req.query.team && isPrivilegedUser) {
+      match.team = req.query.team;
+    } else if (!isPrivilegedUser && req.user && req.user.team) {
+      match.team = req.user.team;
+    }
+
+    const summaryAgg = await Product.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          noInfo: { $sum: { $cond: [{ $eq: ['$statusUpVideo', 'No_Info'] }, 1, 0] } },
+          checking: { $sum: { $cond: [{ $eq: ['$statusUpVideo', 'Checking'] }, 1, 0] } },
+          checked: { $sum: { $cond: [{ $eq: ['$statusUpVideo', 'Checked'] }, 1, 0] } },
+          created: { $sum: { $cond: [{ $eq: ['$statusUpVideo', 'Created'] }, 1, 0] } },
+          uploaded: { $sum: { $cond: [{ $eq: ['$statusUpVideo', 'Uploaded'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    const summary = summaryAgg[0] || {
+      total: 0,
+      noInfo: 0,
+      checking: 0,
+      checked: 0,
+      created: 0,
+      uploaded: 0
+    };
+
+    return res.json({ success: true, data: summary });
+  } catch (error) {
+    console.error('Error fetching products summary:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch products summary' });
   }
 });
 

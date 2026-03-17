@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const teamController = require('../controllers/team.controller');
 const licenseKeyController = require('../controllers/licenseKey.controller');
+const cronManagerController = require('../controllers/cronManager.controller');
 
 // User management routes
 router.get('/accounts', adminController.getUsers);
@@ -20,6 +21,14 @@ router.get('/teams/:id/edit', teamController.getEditTeamForm);
 router.post('/teams', teamController.createTeam);
 router.put('/teams/:id', teamController.updateTeam);
 router.delete('/teams/:id', teamController.deleteTeam);
+
+router.get('/cron-jobs', cronManagerController.getCronJobsPage);
+router.post('/cron-jobs', cronManagerController.createCronJob);
+router.post('/cron-jobs/:id/update', cronManagerController.updateCronJob);
+router.post('/cron-jobs/:id/toggle', cronManagerController.toggleCronJob);
+router.post('/cron-jobs/:id/run', cronManagerController.runCronJobNow);
+router.delete('/cron-jobs/:id', cronManagerController.deleteCronJob);
+router.get('/cron-jobs/logs', cronManagerController.getCronLogs);
 
 
 
