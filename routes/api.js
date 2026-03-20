@@ -20,11 +20,12 @@ const apiKeyAuth = (req, res, next) => {
   next();
 };
 
+router.post('/shopee-accounts/update-cookie-live', apiKeyAuth, ApishopeeAccountController.updateCookieLive);
 // API route to insert Shopee account
 router.post('/shopee-accounts', apiKeyAuth, shopeeAccountController.insertShopeeAccount);
 
 router.get('/shopee-accounts', apiKeyAuth, ApishopeeAccountController.getShopeeAccounts);
-router.post('/shopee-accounts/update-cookie-live', apiKeyAuth, ApishopeeAccountController.updateCookieLive);
+
 
 // Live session routes
 router.post('/live-sessions/start-live', apiKeyAuth, liveSessionController.startLive);

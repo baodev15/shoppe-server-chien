@@ -19,14 +19,14 @@ module.exports.getShopeeAccounts = async (req, res) => {
 
 module.exports.updateCookieLive = async (req, res) => {
   try {
-    const { user_id, cookie_live, username, shopee_id } = req.body;
+    const { user_id, cookie_live, username, shop_id } = req.body;
     const account = await Account.findOne({user_id});
     if (!account) {
       // tạo mới account
-      if (!username || !shopee_id) {
+      if (!username || !shop_id) {
         return res.status(400).json({
           success: false,
-          message: 'Username and Shopee ID are required'
+          message: 'Username and Shop ID are required'
         });
       }
       account = new Account({
@@ -34,7 +34,7 @@ module.exports.updateCookieLive = async (req, res) => {
         cookie_live: cookie_live,
         time_update_cookie: Date.now(),
         username,
-        shopee_id
+        shop_id
       });
       await account.save();
       return res.json({
