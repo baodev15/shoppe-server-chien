@@ -20,7 +20,7 @@ module.exports.getShopeeAccounts = async (req, res) => {
 module.exports.updateCookieLive = async (req, res) => {
   try {
     const { user_id, cookie_live, username, shop_id } = req.body;
-    const account = await Account.findOne({user_id});
+    let account = await Account.findOne({user_id});
     if (!account) {
       // tạo mới account
       if (!username || !shop_id) {
