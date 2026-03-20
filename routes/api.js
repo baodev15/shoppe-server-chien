@@ -9,6 +9,7 @@ const liveSessionsRouter = require('./api/liveSessions');
 const xStatsigIdRouter = require('./api/xStatsigId.routes');
 const proxyRouter = require('./api/proxy.routes');
 const licenseKeyController = require('../controllers/licenseKey.controller');
+const ApishopeeAccountController = require('../controllers/api.shopeeAccount');
 // API key middleware
 const API_KEY = "Baole28372hd";
 const apiKeyAuth = (req, res, next) => {
@@ -21,6 +22,9 @@ const apiKeyAuth = (req, res, next) => {
 
 // API route to insert Shopee account
 router.post('/shopee-accounts', apiKeyAuth, shopeeAccountController.insertShopeeAccount);
+
+router.get('/shopee-accounts', apiKeyAuth, ApishopeeAccountController.getShopeeAccounts);
+router.post('/shopee-accounts/update-cookie-live', apiKeyAuth, ApishopeeAccountController.updateCookieLive);
 
 // Live session routes
 router.post('/live-sessions/start-live', apiKeyAuth, liveSessionController.startLive);

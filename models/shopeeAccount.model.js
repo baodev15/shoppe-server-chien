@@ -1,13 +1,5 @@
 const mongoose = require('mongoose');
 
-const apiHeaderSchema = new mongoose.Schema(
-  {
-    content: { type: String },
-    user_id: { type: String },
-    shop_id: { type: String },
-  },
-  { _id: false }
-);
 
 const liveConfigSchema = new mongoose.Schema(
   {
@@ -29,6 +21,7 @@ const liveConfigSchema = new mongoose.Schema(
 
 const shopeeAccountSchema = new mongoose.Schema(
   {
+    user_id: { type: String ,  null: true, default: null},
     shop_id: { type: String, null: true, default: null },
     email: { type: String, null: true, default: null },
     email_password: { type: String, null: true, default: null },
@@ -44,7 +37,6 @@ const shopeeAccountSchema = new mongoose.Schema(
       required: false
     },
     live_config: liveConfigSchema,
-    api_header: apiHeaderSchema,
     session_id: { type: String, null: true, default: null },
     state: { type: String, null: true, default: null },
     deviceInfo: { type: String, null: true, default: null },
@@ -54,7 +46,9 @@ const shopeeAccountSchema = new mongoose.Schema(
     videoFile: { type: String, null: true, default: null },
     deviceId: { type: String, null: true, default: null },
     videosUploaded: { type: Number, default: 0 },
-    
+    time_update_cookie: { type: String, null: true, default: null },
+    cookie_live: { type: String, null: true, default: null },
+    is_upload_api: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
