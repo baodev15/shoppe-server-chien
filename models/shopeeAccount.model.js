@@ -45,10 +45,12 @@ const shopeeAccountSchema = new mongoose.Schema(
     isCustomCart: { type: Boolean, default: false },
     videoFile: { type: String, null: true, default: null },
     deviceId: { type: String, null: true, default: null },
-    videosUploaded: { type: Number, default: 0 },
+    totalVideosUploaded: { type: Number, default: 0 },
+    dalyVideosUploaded: { type: Number, default: 0 },
     time_update_cookie: { type: String, null: true, default: null },
     cookie_live: { type: String, null: true, default: null },
     is_upload_api: { type: Boolean, default: false },
+    last_status_upload: { type: String, null: true, default: "----" },
   },
   { timestamps: true }
 );

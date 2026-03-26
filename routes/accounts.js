@@ -97,6 +97,150 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/upload-video', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const query = {};
+
+    if (!isPrivilegedUser && req.user && req.user.team) {
+      query.team = req.user.team;
+    }
+
+    if (req.query.search) {
+      query.username = { $regex: req.query.search, $options: 'i' };
+    }
+
+    const accounts = await ShopeeAccount.find(query)
+      .select('username user_id shop_id cookie_live time_update_cookie is_upload_api videosUploaded dalyVideosUploaded totalVideosUploaded last_status_upload team')
+      .populate('team', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.render('accounts_upload_video', {
+      accounts,
+      activePage: 'shopee-accounts-upload-video',
+      title: 'Accounts Upload Video',
+      search: req.query.search || ''
+    });
+  } catch (error) {
+    console.error('Error fetching accounts upload video page:', error);
+    res.status(500).send('Server error');
+  }
+});
+
+router.post('/upload-video/:id/toggle-upload-api', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { enabled } = req.body;
+    const filter = { _id: req.params.id };
+
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      filter.team = req.user.team;
+    }
+
+    const nextValue = !!enabled;
+    const updated = await ShopeeAccount.findOneAndUpdate(
+      filter,
+      { is_upload_api: nextValue },
+      { new: true, select: 'is_upload_api' }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Account not found' });
+    }
+
+    return res.json({
+      success: true,
+      is_upload_api: updated.is_upload_api
+    });
+  } catch (error) {
+    console.error('Error toggling is_upload_api:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.post('/upload-video/batch-toggle-upload-api', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { accountIds, enabled } = req.body;
+
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'accountIds is required' });
+    }
+
+    const validObjectIds = accountIds.filter(id => id && /^[0-9a-fA-F]{24}$/.test(id));
+    if (!validObjectIds.length) {
+      return res.status(400).json({ success: false, message: 'No valid account IDs provided' });
+    }
+
+    const filter = { _id: { $in: validObjectIds } };
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      filter.team = req.user.team;
+    }
+
+    const updateResult = await ShopeeAccount.updateMany(
+      filter,
+      { $set: { is_upload_api: !!enabled } }
+    );
+
+    return res.json({
+      success: true,
+      modifiedCount: updateResult.modifiedCount || 0,
+      enabled: !!enabled
+    });
+  } catch (error) {
+    console.error('Error batch toggling is_upload_api:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.post('/upload-video/bulk-delete', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { accountIds } = req.body;
+
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'accountIds is required' });
+    }
+
+    const validObjectIds = accountIds.filter(id => id && /^[0-9a-fA-F]{24}$/.test(id));
+    if (!validObjectIds.length) {
+      return res.status(400).json({ success: false, message: 'No valid account IDs provided' });
+    }
+
+    const filter = { _id: { $in: validObjectIds } };
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      filter.team = req.user.team;
+    }
+
+    const accountsToDelete = await ShopeeAccount.find(filter).select('_id');
+    const deletableIds = accountsToDelete.map(a => a._id);
+    if (!deletableIds.length) {
+      return res.status(404).json({ success: false, message: 'No accounts found to delete' });
+    }
+
+    const deleteResult = await ShopeeAccount.deleteMany({ _id: { $in: deletableIds } });
+    await Product.deleteMany({ shopee_account: { $in: deletableIds } });
+
+    return res.json({
+      success: true,
+      deletedCount: deleteResult.deletedCount || 0
+    });
+  } catch (error) {
+    console.error('Error bulk deleting upload-video accounts:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Add new account
 router.post('/add', async (req, res) => {
   try {

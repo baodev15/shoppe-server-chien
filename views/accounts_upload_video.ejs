@@ -1,0 +1,220 @@
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Accounts Upload Video</h1>
+    <form method="GET" action="/shopee-accounts/upload-video" class="d-flex" style="max-width: 320px;">
+      <input type="text" class="form-control form-control-sm me-2" name="search" value="<%= search || '' %>" placeholder="Tìm theo username">
+      <button class="btn btn-sm btn-primary" type="submit">Tìm</button>
+    </form>
+  </div>
+  <div class="d-flex gap-2 mb-2">
+    <button class="btn btn-sm btn-danger" id="deleteSelectedBtn" disabled>Xóa selected</button>
+    <button class="btn btn-sm btn-success" id="enableUploadSelectedBtn" disabled>Enable Is Upload API</button>
+    <button class="btn btn-sm btn-secondary" id="disableUploadSelectedBtn" disabled>Disable Is Upload API</button>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center"><input type="checkbox" id="selectAllAccounts"></th>
+              <th>Username</th>
+              <th>User ID</th>
+              <th>Shop ID</th>
+              <th>Cookie Live</th>
+              <th>Time Update Cookie</th>
+              <th>Is Upload API</th>
+              <th>Videos Uploaded</th>
+              <th>Daly Videos Uploaded</th>
+              <th>Trạng thái Upload</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (accounts && accounts.length) { %>
+              <% accounts.forEach(account => { %>
+                <tr>
+                  <td class="text-center">
+                    <input class="form-check-input account-checkbox" type="checkbox" value="<%= account._id %>">
+                  </td>
+                  <td><%= account.username || '-' %></td>
+                  <td><code><%= account.user_id || '-' %></code></td>
+                  <td><code><%= account.shop_id || '-' %></code></td>
+                  <td>
+                    <% if (account.cookie_live) { %>
+                      <span class="badge bg-success">Đã có</span>
+                    <% } else { %>
+                      <span class="badge bg-secondary">Trống</span>
+                    <% } %>
+                  </td>
+                  <% 
+                    const cookieUpdateDate = account.time_update_cookie ? new Date(account.time_update_cookie) : null;
+                    const isValidCookieUpdateDate = cookieUpdateDate && !Number.isNaN(cookieUpdateDate.getTime());
+                    const isCookieUpdateWithinOneHour = isValidCookieUpdateDate && ((Date.now() - cookieUpdateDate.getTime()) <= 60 * 60 * 1000);
+                    const isCookieUpdateOlderThanOneDay = isValidCookieUpdateDate && ((Date.now() - cookieUpdateDate.getTime()) > 24 * 60 * 60 * 1000);
+                  %>
+                  <td id="time-update-cookie-<%= account._id %>" class="<%= isCookieUpdateWithinOneHour ? 'text-success fw-bold' : (isCookieUpdateOlderThanOneDay ? 'text-danger fw-bold' : '') %>">
+                    <%= account.time_update_cookie || '-' %>
+                  </td>
+                  <td>
+                    
+                    <div class="form-check form-switch mt-1">
+                      <input
+                        class="form-check-input toggle-is-upload-api"
+                        type="checkbox"
+                        data-id="<%= account._id %>"
+                        <%= account.is_upload_api ? 'checked' : '' %>
+                      >
+                  <span id="upload-api-status-<%= account._id %>" class="badge <%= account.is_upload_api ? 'bg-success' : 'bg-danger' %>">
+                      <%= account.is_upload_api ? 'allow upload' : 'disable' %>
+                    </span>
+                    </div>
+                  </td>
+                  <td><%= Number(account.videosUploaded || 0).toLocaleString('vi-VN') %></td>
+                  <td><%= Number(account.dalyVideosUploaded || 0).toLocaleString('vi-VN') %></td>
+                  <td><%= account.last_status_upload || '----' %></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="10" class="text-center text-muted py-4">Không có dữ liệu</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggles = document.querySelectorAll('.toggle-is-upload-api');
+    const selectAllAccounts = document.getElementById('selectAllAccounts');
+    const accountCheckboxes = document.querySelectorAll('.account-checkbox');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const enableUploadSelectedBtn = document.getElementById('enableUploadSelectedBtn');
+    const disableUploadSelectedBtn = document.getElementById('disableUploadSelectedBtn');
+
+    function getSelectedAccountIds() {
+      return Array.from(document.querySelectorAll('.account-checkbox:checked')).map(el => el.value);
+    }
+
+    function updateSelectedState() {
+      const total = accountCheckboxes.length;
+      const checked = document.querySelectorAll('.account-checkbox:checked').length;
+      const hasSelection = checked > 0;
+      deleteSelectedBtn.disabled = !hasSelection;
+      enableUploadSelectedBtn.disabled = !hasSelection;
+      disableUploadSelectedBtn.disabled = !hasSelection;
+      if (selectAllAccounts) {
+        selectAllAccounts.checked = total > 0 && checked === total;
+        selectAllAccounts.indeterminate = checked > 0 && checked < total;
+      }
+    }
+
+    if (selectAllAccounts) {
+      selectAllAccounts.addEventListener('change', function() {
+        accountCheckboxes.forEach(cb => {
+          cb.checked = this.checked;
+        });
+        updateSelectedState();
+      });
+    }
+
+    accountCheckboxes.forEach(cb => {
+      cb.addEventListener('change', updateSelectedState);
+    });
+
+    toggles.forEach(toggle => {
+      toggle.addEventListener('change', async function() {
+        const accountId = this.getAttribute('data-id');
+        const enabled = this.checked;
+        this.disabled = true;
+        try {
+          const response = await fetch(`/shopee-accounts/upload-video/${accountId}/toggle-upload-api`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+          });
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.message || 'Update failed');
+          }
+          const target = document.getElementById(`upload-api-status-${accountId}`);
+          if (target) {
+            if (result.is_upload_api) {
+              target.textContent = 'allow upload';
+              target.classList.remove('bg-danger');
+              target.classList.add('bg-success');
+            } else {
+              target.textContent = 'disable';
+              target.classList.remove('bg-success');
+              target.classList.add('bg-danger');
+            }
+          }
+        } catch (error) {
+          this.checked = !enabled;
+          alert('Không cập nhật được is_upload_api');
+        } finally {
+          this.disabled = false;
+        }
+      });
+    });
+
+    async function batchToggleUploadApi(enabled) {
+      const accountIds = getSelectedAccountIds();
+      if (!accountIds.length) {
+        return;
+      }
+      try {
+        const response = await fetch('/shopee-accounts/upload-video/batch-toggle-upload-api', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountIds, enabled })
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.message || 'Update failed');
+        }
+        window.location.reload();
+      } catch (error) {
+        alert('Không cập nhật được selected accounts');
+      }
+    }
+
+    deleteSelectedBtn.addEventListener('click', async function() {
+      const accountIds = getSelectedAccountIds();
+      if (!accountIds.length) {
+        return;
+      }
+      if (!confirm(`Xóa ${accountIds.length} tài khoản đã chọn?`)) {
+        return;
+      }
+      try {
+        const response = await fetch('/shopee-accounts/upload-video/bulk-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountIds })
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.message || 'Delete failed');
+        }
+        window.location.reload();
+      } catch (error) {
+        alert('Không xóa được selected accounts');
+      }
+    });
+
+    enableUploadSelectedBtn.addEventListener('click', function() {
+      batchToggleUploadApi(true);
+    });
+
+    disableUploadSelectedBtn.addEventListener('click', function() {
+      batchToggleUploadApi(false);
+    });
+
+    updateSelectedState();
+  });
+</script>
