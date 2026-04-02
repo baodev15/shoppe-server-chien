@@ -48,13 +48,22 @@
                     <% } %>
                   </td>
                   <% 
-                    const cookieUpdateDate = account.time_update_cookie ? new Date(account.time_update_cookie) : null;
+                    const rawTimeUpdateCookie = account.time_update_cookie;
+                    let cookieUpdateDate = null;
+                    if (rawTimeUpdateCookie !== null && rawTimeUpdateCookie !== undefined && rawTimeUpdateCookie !== '') {
+                      const numericTimestamp = Number(rawTimeUpdateCookie);
+                      if (!Number.isNaN(numericTimestamp)) {
+                        cookieUpdateDate = new Date(numericTimestamp > 9999999999 ? numericTimestamp : numericTimestamp * 1000);
+                      } else {
+                        cookieUpdateDate = new Date(rawTimeUpdateCookie);
+                      }
+                    }
                     const isValidCookieUpdateDate = cookieUpdateDate && !Number.isNaN(cookieUpdateDate.getTime());
                     const isCookieUpdateWithinOneHour = isValidCookieUpdateDate && ((Date.now() - cookieUpdateDate.getTime()) <= 60 * 60 * 1000);
                     const isCookieUpdateOlderThanOneDay = isValidCookieUpdateDate && ((Date.now() - cookieUpdateDate.getTime()) > 24 * 60 * 60 * 1000);
                     const displayedTimeUpdateCookie = isValidCookieUpdateDate
                       ? `${String(cookieUpdateDate.getHours()).padStart(2, '0')}:${String(cookieUpdateDate.getMinutes()).padStart(2, '0')}:${String(cookieUpdateDate.getSeconds()).padStart(2, '0')} ${String(cookieUpdateDate.getDate()).padStart(2, '0')}/${String(cookieUpdateDate.getMonth() + 1).padStart(2, '0')}/${cookieUpdateDate.getFullYear()}`
-                      : (account.time_update_cookie || '-');
+                      : (rawTimeUpdateCookie || '-');
                   %>
                   <td id="time-update-cookie-<%= account._id %>" class="<%= isCookieUpdateWithinOneHour ? 'text-success fw-bold' : (isCookieUpdateOlderThanOneDay ? 'text-danger fw-bold' : '') %>">
                     <%= displayedTimeUpdateCookie %>
