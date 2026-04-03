@@ -180,7 +180,7 @@ exports.getTeamLinkCounts = async (req, res) => {
 
     const validTeamIds = teamIdsRaw
       .filter(id => mongoose.Types.ObjectId.isValid(id))
-      .map(id => new mongoose.Types.ObjectId(id));
+      .map(id => id);
 
     const matchConditions = {
       team: { $ne: null },

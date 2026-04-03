@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16;        // 128 bit = 16 bytes
 const Account = require('../models/shopeeAccount.model');
+const mongoose = require('mongoose');
 function deriveKey(passphrase) {
   // Trả về Buffer 32-byte
   return crypto.createHash('sha256')
@@ -347,7 +348,7 @@ router.delete('/delete/:id', async (req, res) => {
   try {
     const deletedAccount = await ShopeeAccount.findByIdAndDelete(req.params.id);
     // xóa log
-    await ShopeeAccountApiLog.deleteMany({ account: new mongoose.Types.ObjectId(req.params.id) });
+    await ShopeeAccountApiLog.deleteMany({ account: req.params.id });
 
     if (!deletedAccount) {
       return res.status(404).json({ success: false, message: 'Account not found' });

@@ -127,7 +127,7 @@ module.exports.logApiCall = async (req, res) => {
       });
     }
     const created = await ShopeeAccountApiLog.create({
-      account: new mongoose.Types.ObjectId(account._id),
+      account: account._id,
       status: status || '',
       message: message || '',
       job_id: job_id || '',
