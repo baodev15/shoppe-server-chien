@@ -3,6 +3,7 @@ const router = express.Router();
 const ShopeeAccount = require('../models/shopeeAccount.model');
 const Team = require('../models/team.model');
 const Product = require('../models/product.model');
+const ShopeeAccountApiLog = require('../models/shopeeAccountApiLog.model');
 const shopeeAccountController = require('../controllers/shopeeAccount.controller');
 const fs = require('fs');
 const path = require('path');
@@ -125,6 +126,40 @@ router.get('/upload-video', async (req, res) => {
   } catch (error) {
     console.error('Error fetching accounts upload video page:', error);
     res.status(500).send('Server error');
+  }
+});
+
+router.get('/upload-video/logs', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const limit = Math.min(Number(req.query.limit || 200), 500);
+    const filter = {};
+
+    if (req.query.username) {
+      filter.username = req.query.username;
+    }
+
+    if (!isPrivilegedUser && req.user && req.user.team) {
+      const teamAccounts = await ShopeeAccount.find({ team: req.user.team }).select('username').lean();
+      const allowedUserIds = teamAccounts.map(a => a.username).filter(Boolean);
+      if (filter.user_id) {
+        if (!allowedUserIds.includes(filter.username)) {
+          return res.json({ success: true, data: [] });
+        }
+      } else {
+        filter.username = { $in: allowedUserIds };
+      }
+    }
+
+    const logs = await ShopeeAccountApiLog.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    return res.json({ success: true, data: logs });
+  } catch (error) {
+    console.error('Error loading upload-video logs:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

@@ -47,6 +47,7 @@ const shopeeAccountSchema = new mongoose.Schema(
     deviceId: { type: String, null: true, default: null },
     totalVideosUploaded: { type: Number, default: 0 },
     dalyVideosUploaded: { type: Number, default: 0 },
+    last_upload_time: { type: Date, default: Date.now() },
     time_update_cookie: { type: String, null: true, default: null },
     cookie_live: { type: String, null: true, default: null },
     is_upload_api: { type: Boolean, default: false },

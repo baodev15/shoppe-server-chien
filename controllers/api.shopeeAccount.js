@@ -1,5 +1,6 @@
 
 const Account = require('../models/shopeeAccount.model');
+const ShopeeAccountApiLog = require('../models/shopeeAccountApiLog.model');
 
 module.exports.getShopeeAccounts = async (req, res) => {
   try {
@@ -10,6 +11,45 @@ module.exports.getShopeeAccounts = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching shopee accounts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+}
+
+
+module.exports.uploadVideoStatus = async (req, res) =>{
+  try {
+    const { username, video_status } = req.body;
+    let account = await Account.findOne({username});
+    if (!account) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account not found'
+      });
+    }
+    account.last_status_upload = video_status;
+    if(video_status=="DONE"){
+      // thêm  totalVideosUploaded
+       //dalyVideosUploaded => nếu ngày mới là ngày khác thì dalyVideosUploaded = 1
+       //nếu ngày mới là ngày cùng thì dalyVideosUploaded++;
+       account.totalVideosUploaded++;
+   
+       if(account.last_upload_time.getDate() !== new Date().getDate()){
+        account.dalyVideosUploaded = 1;
+        account.last_upload_time = new Date();
+       }else{
+            account.dalyVideosUploaded++;
+       }
+    }
+    await account.save();
+    res.json({
+      success: true,
+      message: 'Video status updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating video status:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -60,6 +100,40 @@ module.exports.updateCookieLive = async (req, res) => {
   } catch (error) {
     console.error('Error updating cookie live:', error);
     res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+}
+
+module.exports.logApiCall = async (req, res) => {
+  try {
+    const {username, status, message, job_id, source, payload } = req.body || {};
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'username is required'
+      });
+    }
+
+    const created = await ShopeeAccountApiLog.create({
+      username: username,
+      status: status || '',
+      message: message || '',
+      job_id: job_id || '',
+      source: source || 'upload_api',
+      payload: payload || {}
+    });
+
+    return res.json({
+      success: true,
+      message: 'Log saved',
+      id: created._id
+    });
+  } catch (error) {
+    console.error('Error saving api log:', error);
+    return res.status(500).json({
       success: false,
       message: 'Server error'
     });
