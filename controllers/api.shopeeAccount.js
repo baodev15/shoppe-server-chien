@@ -1,6 +1,7 @@
 
 const Account = require('../models/shopeeAccount.model');
 const ShopeeAccountApiLog = require('../models/shopeeAccountApiLog.model');
+const mongoose = require('mongoose');
 
 module.exports.getShopeeAccounts = async (req, res) => {
   try {
@@ -126,7 +127,7 @@ module.exports.logApiCall = async (req, res) => {
       });
     }
     const created = await ShopeeAccountApiLog.create({
-      account: account._id,
+      account: new mongoose.Types.ObjectId(account._id),
       status: status || '',
       message: message || '',
       job_id: job_id || '',

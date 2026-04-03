@@ -153,6 +153,7 @@ router.get('/upload-video/logs', async (req, res) => {
       .limit(limit)
       .populate('account', 'username user_id')
       .lean();
+    console.log(logs);
 
     return res.json({ success: true, data: logs });
   } catch (error) {
@@ -345,6 +346,8 @@ router.post('/update/:id', async (req, res) => {
 router.delete('/delete/:id', async (req, res) => {
   try {
     const deletedAccount = await ShopeeAccount.findByIdAndDelete(req.params.id);
+    // xóa log
+    await ShopeeAccountApiLog.deleteMany({ account: new mongoose.Types.ObjectId(req.params.id) });
 
     if (!deletedAccount) {
       return res.status(404).json({ success: false, message: 'Account not found' });
