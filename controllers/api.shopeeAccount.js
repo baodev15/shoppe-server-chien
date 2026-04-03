@@ -22,8 +22,8 @@ module.exports.getShopeeAccounts = async (req, res) => {
 
 module.exports.uploadVideoStatus = async (req, res) => {
   try {
-    const { username, video_status } = req.body;
-    let account = await Account.findOne({ username });
+    const { user_id, video_status } = req.body;
+    let account = await Account.findOne({ user_id });
     if (!account) {
       return res.status(400).json({
         success: false,
