@@ -11,6 +11,7 @@ const deviceGenerators = require('../utils/device-generators');
 const crypto = require('crypto');
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16;        // 128 bit = 16 bytes
+const Account = require('../models/shopeeAccount.model');
 function deriveKey(passphrase) {
   // Trả về Buffer 32-byte
   return crypto.createHash('sha256')
@@ -131,29 +132,26 @@ router.get('/upload-video', async (req, res) => {
 
 router.get('/upload-video/logs', async (req, res) => {
   try {
-    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
     const limit = Math.min(Number(req.query.limit || 200), 500);
     const filter = {};
-
+    console.log(req.query.username);
     if (req.query.username) {
-      filter.username = req.query.username;
-    }
-
-    if (!isPrivilegedUser && req.user && req.user.team) {
-      const teamAccounts = await ShopeeAccount.find({ team: req.user.team }).select('username').lean();
-      const allowedUserIds = teamAccounts.map(a => a.username).filter(Boolean);
-      if (filter.user_id) {
-        if (!allowedUserIds.includes(filter.username)) {
-          return res.json({ success: true, data: [] });
-        }
-      } else {
-        filter.username = { $in: allowedUserIds };
+      let account = await Account.findOne({ username: req.query.username });
+      if (!account) {
+        return res.status(400).json({
+          success: false,
+          message: 'Account not found'
+        });
       }
+      filter.account = account._id;
+      console.log(filter);
     }
+     
 
     const logs = await ShopeeAccountApiLog.find(filter)
       .sort({ createdAt: -1 })
       .limit(limit)
+      .populate('account', 'username user_id')
       .lean();
 
     return res.json({ success: true, data: logs });

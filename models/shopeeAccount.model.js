@@ -21,11 +21,11 @@ const liveConfigSchema = new mongoose.Schema(
 
 const shopeeAccountSchema = new mongoose.Schema(
   {
-    user_id: { type: String ,  null: true, default: null},
+    user_id: { type: String ,  unique: true , required: true},
     shop_id: { type: String, null: true, default: null },
     email: { type: String, null: true, default: null },
     email_password: { type: String, null: true, default: null },
-    username: { type: String, null: true, default: null },
+    username: { type: String, unique: true , required: true},
     phone: { type: String, null: true, default: null },
     password: { type: String, null: true, default: null },
     is_active: { type: Boolean, default: true },

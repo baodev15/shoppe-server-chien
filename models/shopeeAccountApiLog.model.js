@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const shopeeAccountApiLogSchema = new mongoose.Schema({
-  username: { type: String,  required: true },
+  account: { type: mongoose.Schema.Types.ObjectId, ref: 'ShopeeAccount', required: true },
   status: { type: String, default: '' },
   message: { type: String, default: '' },
   job_id: { type: String, default: '' },

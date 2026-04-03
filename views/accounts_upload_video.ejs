@@ -22,7 +22,6 @@
               <th class="text-center"><input type="checkbox" id="selectAllAccounts"></th>
               <th>Username</th>
               <th>User ID</th>
-              <th>Shop ID</th>
               <th>Cookie Live</th>
               <th>Time Update Cookie</th>
               <th>Is Upload API</th>
@@ -43,7 +42,6 @@
                     <%= account.username || '-' %>
                   </td>
                   <td><code><%= account.user_id || '-' %></code></td>
-                  <td><code><%= account.shop_id || '-' %></code></td>
                   <td>
                     <% if (account.cookie_live) { %>
                       <span class="badge bg-success">Đã có</span>
@@ -331,7 +329,7 @@
         tbody.innerHTML = logs.map(log => `
           <tr>
             <td>${formatLogTime(log.createdAt)}</td>
-            <td>${log.username || '-'}</td>
+            <td>${log.account.username || '-'}</td>
             <td>${getStatusBadge(log.status)}</td>
             <td style="width: 45%; white-space: normal; word-break: break-word;">${log.message || '-'}</td>
             <td>${log.job_id || '-'}</td>
@@ -346,7 +344,7 @@
     viewLogsButtons.forEach(btn => {
       btn.addEventListener('click', function () {
         const username = this.getAttribute('data-username') || '-';
-LogsUsername = username;
+        currentLogsUsername = username;
         if (accountLogsModalTitle) {
           accountLogsModalTitle.textContent = `${username}`;
         }
@@ -359,7 +357,7 @@ LogsUsername = username;
 
     if (refreshAccountLogsBtn) {
       refreshAccountLogsBtn.addEventListener('click', function () {
-        loadApiLogs(currentLogsUserId, currentLogsUsername);
+        loadApiLogs(currentLogsUsername);
       });
     }
 

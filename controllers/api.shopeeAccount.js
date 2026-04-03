@@ -4,7 +4,7 @@ const ShopeeAccountApiLog = require('../models/shopeeAccountApiLog.model');
 
 module.exports.getShopeeAccounts = async (req, res) => {
   try {
-    const accounts = await Account.find({cookie_live: {$ne: null}, is_upload_api: true}).sort({ name: 1 });
+    const accounts = await Account.find({ cookie_live: { $ne: null }, is_upload_api: true }).sort({ name: 1 });
     res.json({
       success: true,
       accounts
@@ -19,29 +19,31 @@ module.exports.getShopeeAccounts = async (req, res) => {
 }
 
 
-module.exports.uploadVideoStatus = async (req, res) =>{
+module.exports.uploadVideoStatus = async (req, res) => {
   try {
     const { username, video_status } = req.body;
-    let account = await Account.findOne({username});
+    let account = await Account.findOne({ username });
     if (!account) {
       return res.status(400).json({
         success: false,
         message: 'Account not found'
       });
     }
-    account.last_status_upload = video_status;
-    if(video_status=="DONE"){
-      // thêm  totalVideosUploaded
-       //dalyVideosUploaded => nếu ngày mới là ngày khác thì dalyVideosUploaded = 1
-       //nếu ngày mới là ngày cùng thì dalyVideosUploaded++;
-       account.totalVideosUploaded++;
-   
-       if(account.last_upload_time.getDate() !== new Date().getDate()){
+
+    if (video_status == "DONE") {
+      account.totalVideosUploaded++;
+      if (account.last_upload_time.getDate() !== new Date().getDate()) {
         account.dalyVideosUploaded = 1;
         account.last_upload_time = new Date();
-       }else{
-            account.dalyVideosUploaded++;
-       }
+      } else {
+        account.dalyVideosUploaded++;
+      }
+      account.last_status_upload = "Đăng video thành công";
+    } else if (video_status == "COOKIE_EXPIRED") {
+      account.is_upload_api = false;
+      account.last_status_upload = "Cookie hết hạn! Vui lòng cập nhật lại cookie mới.";
+    } else {
+      account.last_status_upload = video_status;
     }
     await account.save();
     res.json({
@@ -60,10 +62,10 @@ module.exports.uploadVideoStatus = async (req, res) =>{
 module.exports.updateCookieLive = async (req, res) => {
   try {
     const { user_id, cookie_live, username, shop_id } = req.body;
-    let account = await Account.findOne({user_id});
+    let account = await Account.findOne({ user_id });
     if (!account) {
       // tạo mới account
-      if (!username || !shop_id) {
+      if (!username) {
         return res.status(400).json({
           success: false,
           message: 'Username and Shop ID are required'
@@ -108,17 +110,23 @@ module.exports.updateCookieLive = async (req, res) => {
 
 module.exports.logApiCall = async (req, res) => {
   try {
-    const {username, status, message, job_id, source, payload } = req.body || {};
+    const { user_id, status, message, job_id, source, payload } = req.body || {};
 
-    if (!username) {
+    if (!user_id) {
       return res.status(400).json({
         success: false,
-        message: 'username is required'
+        message: 'user_id is required'
       });
     }
-
+    let account = await Account.findOne({ user_id });
+    if (!account) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account not found'
+      });
+    }
     const created = await ShopeeAccountApiLog.create({
-      username: username,
+      account: account._id,
       status: status || '',
       message: message || '',
       job_id: job_id || '',
