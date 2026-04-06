@@ -100,6 +100,18 @@ exports.insertShopeeAccount = async (req, res) => {
     });
   }
 };
+exports.updateIsUploadApiShopeeAccount =  async (req, res) => {
+  const { _id, is_upload_api } = req.body;
+  const account = await ShopeeAccount.findByIdAndUpdate(_id, { is_upload_api }, { new: true });
+  if (!account) {
+    return res.status(404).json({ success: false, message: "Shopee account not found" });
+  }
+  
+  if (account.is_upload_api === is_upload_api) {
+    return res.status(200).json({ success: true, message: "Shopee account is already updated" });
+  }
+
+}
 // Get all accounts with team filtering
 exports.getAllAccounts = async (req, res) => {
   try {

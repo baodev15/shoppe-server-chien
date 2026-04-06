@@ -5,7 +5,8 @@ const mongoose = require('mongoose');
 
 module.exports.getShopeeAccounts = async (req, res) => {
   try {
-    const accounts = await Account.find({ cookie_live: { $ne: null }, is_upload_api: true }).sort({ name: 1 });
+    const team = req.query.team;
+    const accounts = await Account.find({ cookie_live: { $ne: null }, is_upload_api: true, team: team }).sort({ name: 1 });
     res.json({
       success: true,
       accounts
