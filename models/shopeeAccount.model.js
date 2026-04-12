@@ -47,14 +47,55 @@ const shopeeAccountSchema = new mongoose.Schema(
     deviceId: { type: String, null: true, default: null },
     totalVideosUploaded: { type: Number, default: 0 },
     dalyVideosUploaded: { type: Number, default: 0 },
+    maxDalyVideosUploaded: { type: Number, default: 0 },
     last_upload_time: { type: Date, default: Date.now() },
     time_update_cookie: { type: String, null: true, default: null },
     cookie_live: { type: String, null: true, default: null },
     is_upload_api: { type: Boolean, default: false },
     last_status_upload: { type: String, null: true, default: "----" },
+    number_error_upload: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
+
+shopeeAccountSchema.pre('save', async function (next) {
+  if (!this.isModified('is_upload_api') || this.is_upload_api !== true || this.isNew) {
+    return next();
+  }
+
+  const previous = await this.constructor.findById(this._id).select('is_upload_api').lean();
+  if (previous && previous.is_upload_api === false) {
+    this.number_error_upload = 0;
+  }
+  next();
+});
+
+function applyUploadApiResetRule() {
+  const update = this.getUpdate() || {};
+  const nextUploadApiValue = Object.prototype.hasOwnProperty.call(update, 'is_upload_api')
+    ? update.is_upload_api
+    : (update.$set && Object.prototype.hasOwnProperty.call(update.$set, 'is_upload_api')
+      ? update.$set.is_upload_api
+      : undefined);
+
+  if (nextUploadApiValue !== true) {
+    return;
+  }
+
+  if (!update.$set) {
+    update.$set = {};
+  }
+  update.$set.number_error_upload = 0;
+  this.setUpdate(update);
+
+  const currentQuery = this.getQuery() || {};
+  this.setQuery({
+    $and: [currentQuery, { is_upload_api: false }]
+  });
+}
+
+shopeeAccountSchema.pre('findOneAndUpdate', applyUploadApiResetRule);
+shopeeAccountSchema.pre('updateMany', applyUploadApiResetRule);
 
 module.exports = mongoose.model('ShopeeAccount', shopeeAccountSchema);
 

@@ -112,9 +112,9 @@ router.get('/upload-video', async (req, res) => {
     if (req.query.search) {
       query.username = { $regex: req.query.search, $options: 'i' };
     }
-
+    
     const accounts = await ShopeeAccount.find(query)
-      .select('username user_id shop_id cookie_live time_update_cookie is_upload_api videosUploaded dalyVideosUploaded totalVideosUploaded last_status_upload team')
+      .select('username user_id shop_id cookie_live time_update_cookie is_upload_api videosUploaded dalyVideosUploaded maxDalyVideosUploaded totalVideosUploaded last_status_upload number_error_upload team last_upload_time')
       .populate('team', 'name')
       .sort({ createdAt: -1 })
       .lean();
@@ -197,6 +197,47 @@ router.post('/upload-video/:id/toggle-upload-api', async (req, res) => {
   }
 });
 
+router.post('/upload-video/:id/update-cookie-live', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { cookie_live } = req.body;
+    const filter = { _id: req.params.id };
+
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      filter.team = req.user.team;
+    }
+
+    if (!cookie_live || !String(cookie_live).trim()) {
+      return res.status(400).json({ success: false, message: 'cookie_live is required' });
+    }
+
+    const updated = await ShopeeAccount.findOneAndUpdate(
+      filter,
+      {
+        cookie_live: String(cookie_live).trim(),
+        time_update_cookie: String(Date.now())
+      },
+      { new: true, select: 'cookie_live time_update_cookie' }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Account not found' });
+    }
+
+    return res.json({
+      success: true,
+      cookie_live: updated.cookie_live,
+      time_update_cookie: updated.time_update_cookie
+    });
+  } catch (error) {
+    console.error('Error updating cookie_live:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 router.post('/upload-video/batch-toggle-upload-api', async (req, res) => {
   try {
     const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
@@ -231,6 +272,49 @@ router.post('/upload-video/batch-toggle-upload-api', async (req, res) => {
     });
   } catch (error) {
     console.error('Error batch toggling is_upload_api:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.post('/upload-video/batch-set-max-daily-videos', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { accountIds, maxDalyVideosUploaded } = req.body;
+
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'accountIds is required' });
+    }
+
+    const parsedValue = Number(maxDalyVideosUploaded);
+    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      return res.status(400).json({ success: false, message: 'maxDalyVideosUploaded must be a non-negative number' });
+    }
+
+    const validObjectIds = accountIds.filter(id => id && /^[0-9a-fA-F]{24}$/.test(id));
+    if (!validObjectIds.length) {
+      return res.status(400).json({ success: false, message: 'No valid account IDs provided' });
+    }
+
+    const filter = { _id: { $in: validObjectIds } };
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      filter.team = req.user.team;
+    }
+
+    const updateResult = await ShopeeAccount.updateMany(
+      filter,
+      { $set: { maxDalyVideosUploaded: parsedValue } }
+    );
+
+    return res.json({
+      success: true,
+      modifiedCount: updateResult.modifiedCount || 0,
+      maxDalyVideosUploaded: parsedValue
+    });
+  } catch (error) {
+    console.error('Error batch setting maxDalyVideosUploaded:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 });

@@ -2,11 +2,13 @@
 const Account = require('../models/shopeeAccount.model');
 const ShopeeAccountApiLog = require('../models/shopeeAccountApiLog.model');
 const mongoose = require('mongoose');
+const { emitUploadLog, emitUploadAccountUpdate } = require('../services/uploadLogSocket.service');
 
 module.exports.getShopeeAccounts = async (req, res) => {
   try {
     const team = req.query.team;
-    const accounts = await Account.find({ cookie_live: { $ne: null }, is_upload_api: true, team: team }).sort({ name: 1 });
+    console.log('team:', team);
+    const accounts = await Account.find({ cookie_live: { $ne: null },  team: team }).sort({ username: 1 });
     res.json({
       success: true,
       accounts
@@ -43,7 +45,7 @@ module.exports.uploadVideoStatus = async (req, res) => {
       account.last_status_upload = "Đăng video thành công";
     } else if (video_status == "COOKIE_EXPIRED") {
       account.is_upload_api = false;
-      account.last_status_upload = "Cookie hết hạn! Vui lòng cập nhật lại cookie mới.";
+      account.last_status_upload = "Cookie hết hạn!";
     } else {
       account.last_status_upload = video_status;
     }
@@ -136,6 +138,15 @@ module.exports.logApiCall = async (req, res) => {
       payload: payload || {}
     });
 
+    emitUploadLog({
+      id: created._id,
+      time: created.createdAt,
+      username: account.username || '',
+      user_id: account.user_id || '',
+      status: created.status || '',
+      message: created.message || ''
+    });
+
     return res.json({
       success: true,
       message: 'Log saved',
@@ -144,6 +155,95 @@ module.exports.logApiCall = async (req, res) => {
   } catch (error) {
     console.error('Error saving api log:', error);
     return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+}
+// API route to upload cronner
+module.exports.getShopeeAccountsUpload = async (req, res) => {
+  try {
+    // lấy tất cả account có cookie_live, is_upload_api = true, dalyVideosUploaded < maxDalyVideosUploaded hoặc last_upload_time cũ hơn 1 ngày
+    const query = {
+      cookie_live: { $ne: null },
+      is_upload_api: true
+    };
+
+    const accounts = await Account.find(query).sort({ username: 1 });
+    // lọc ra những account có dalyVideosUploaded < maxDalyVideosUploaded hoặc last_upload_time cũ hơn 1 ngày
+    const accountsUpload = accounts.filter(account => account.dalyVideosUploaded < account.maxDalyVideosUploaded || account.last_upload_time < new Date(Date.now() - 24 * 60 * 60 * 1000));
+
+    res.json({
+      success: true,
+      accounts: accountsUpload
+    });
+  } catch (error) {
+    console.error('Error fetching shopee accounts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+}
+
+module.exports.postShopeeAccountsUpload = async (req, res) => {
+  try {
+    const { user_id, cookie_live_new, status_upload } = req.body;
+
+    let account = await Account.findOne({ user_id });
+    if (!account) {
+      return res.status(400).json({
+        success: false,
+        message: 'Accounts are required'
+      });
+    }
+    if(status_upload == "COOKIE_EXPIRED"){
+      account.is_upload_api = false;
+      account.last_status_upload = "Cookie hết hạn!";
+    } else if(status_upload == "VIDEO_UPLOADED"){
+      account.totalVideosUploaded++;
+      if (account.last_upload_time.getDate() !== new Date().getDate()) {
+        account.dalyVideosUploaded = 1;
+        account.last_upload_time = new Date();
+      } else {
+        account.dalyVideosUploaded++;
+      }
+      account.is_upload_api = true;
+      if (cookie_live_new) {
+        account.cookie_live = cookie_live_new;
+      }
+      account.number_error_upload = 0;
+      account.last_status_upload = "	Đăng video thành công.";
+    } else {
+      account.number_error_upload++;
+      if(account.number_error_upload >= 3){
+        account.is_upload_api = false;
+      } else {
+        account.is_upload_api = true;
+      }
+      account.last_status_upload = status_upload || account.last_status_upload;
+    }
+    await account.save();
+
+    emitUploadAccountUpdate({
+      account_id: String(account._id),
+      user_id: account.user_id || '',
+      username: account.username || '',
+      totalVideosUploaded: Number(account.totalVideosUploaded || 0),
+      dalyVideosUploaded: Number(account.dalyVideosUploaded || 0),
+      maxDalyVideosUploaded: Number(account.maxDalyVideosUploaded || 0),
+      last_upload_time: account.last_upload_time || null,
+      number_error_upload: Number(account.number_error_upload || 0),
+      last_status_upload: account.last_status_upload || ''
+    });
+
+    res.json({
+      success: true,
+      message: 'Account status updated successfully'
+    });
+  } catch (error) {
+    console.error('Error posting shopee accounts:', error);
+    res.status(500).json({
       success: false,
       message: 'Server error'
     });

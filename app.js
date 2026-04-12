@@ -13,6 +13,8 @@ const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 const settingsRoutes = require('./routes/settings');
 const revenueStatsRoutes = require('./routes/revenueStats');
+const http = require('http');
+const { initUploadLogSocket } = require('./services/uploadLogSocket.service');
 
 const app = express();
 const SHOPEE_ORIGIN = (process.env.SHOPEE_ORIGIN || 'https://shopee.vn').startsWith('http')
@@ -151,7 +153,9 @@ app.use((err, req, res, next) => {
   });
 });
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+initUploadLogSocket(server);
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
