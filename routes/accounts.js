@@ -238,6 +238,107 @@ router.post('/upload-video/:id/update-cookie-live', async (req, res) => {
   }
 });
 
+router.post('/upload-video/update-cookie-live-by-user-id', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { user_id, cookie_live } = req.body;
+
+    if (!user_id || !String(user_id).trim()) {
+      return res.status(400).json({ success: false, message: 'user_id is required' });
+    }
+    if (!cookie_live || !String(cookie_live).trim()) {
+      return res.status(400).json({ success: false, message: 'cookie_live is required' });
+    }
+
+    const filter = { user_id: String(user_id).trim() };
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      filter.team = req.user.team;
+    }
+
+    const updated = await ShopeeAccount.findOneAndUpdate(
+      filter,
+      {
+        cookie_live: String(cookie_live).trim(),
+        time_update_cookie: String(Date.now())
+      },
+      { new: true, select: 'user_id username cookie_live time_update_cookie' }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Account not found by user_id' });
+    }
+
+    return res.json({
+      success: true,
+      account: {
+        user_id: updated.user_id,
+        username: updated.username || '',
+        time_update_cookie: updated.time_update_cookie
+      }
+    });
+  } catch (error) {
+    console.error('Error updating cookie_live by user_id:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.post('/upload-video/create-account-by-cookie', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const { username, user_id, cookie_live } = req.body;
+
+    if (!username || !String(username).trim()) {
+      return res.status(400).json({ success: false, message: 'username is required' });
+    }
+    if (!user_id || !String(user_id).trim()) {
+      return res.status(400).json({ success: false, message: 'user_id is required' });
+    }
+    if (!cookie_live || !String(cookie_live).trim()) {
+      return res.status(400).json({ success: false, message: 'cookie_live is required' });
+    }
+
+    const normalizedUsername = String(username).trim();
+    const normalizedUserId = String(user_id).trim();
+    const normalizedCookie = String(cookie_live).trim();
+    const updateData = {
+      username: normalizedUsername,
+      cookie_live: normalizedCookie,
+      time_update_cookie: String(Date.now())
+    };
+
+    if (!isPrivilegedUser) {
+      if (!req.user || !req.user.team) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      updateData.team = req.user.team;
+    }
+
+    const account = await ShopeeAccount.findOneAndUpdate(
+      { user_id: normalizedUserId },
+      { $set: updateData, $setOnInsert: { user_id: normalizedUserId, is_upload_api: true } },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+
+    return res.json({
+      success: true,
+      account: {
+        _id: account._id,
+        username: account.username,
+        user_id: account.user_id
+      }
+    });
+  } catch (error) {
+    if (error && error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'username hoặc user_id đã tồn tại' });
+    }
+    console.error('Error creating account by cookie:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 router.post('/upload-video/batch-toggle-upload-api', async (req, res) => {
   try {
     const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);

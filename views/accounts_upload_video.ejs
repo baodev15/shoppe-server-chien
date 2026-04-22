@@ -8,6 +8,8 @@
     </form>
   </div>
   <div class="d-flex gap-2 mb-2">
+    <button class="btn btn-sm btn-info" id="addAccountByCookieBtn">Thêm Account</button>
+    <button class="btn btn-sm btn-warning" id="updateCookieByInputBtn">Update Cookie Live</button>
     <button class="btn btn-sm btn-danger" id="deleteSelectedBtn" disabled>Xóa selected</button>
     <button class="btn btn-sm btn-success" id="enableUploadSelectedBtn" disabled>Enable Is Upload API</button>
     <button class="btn btn-sm btn-secondary" id="disableUploadSelectedBtn" disabled>Disable Is Upload API</button>
@@ -23,6 +25,7 @@
           <thead class="table-light">
             <tr>
               <th class="text-center"><input type="checkbox" id="selectAllAccounts"></th>
+              <th>STT</th>
               <th>Username</th>
               <th>User ID</th>
               <th>Cookie Live</th>
@@ -38,11 +41,13 @@
           </thead>
           <tbody>
             <% if (accounts && accounts.length) { %>
-              <% accounts.forEach(account=> { %>
+              <% accounts.forEach((account,index) => { %>
                 <tr>
+                  
                   <td class="text-center">
                     <input class="form-check-input account-checkbox" type="checkbox" value="<%= account._id %>">
                   </td>
+                  <td class="text-center"><%= index+1 %></td>
                   <td>
                     <%= account.username || '-' %>
                   </td>
@@ -142,10 +147,6 @@
                       </td>
                       <td>
                         <div class="d-flex gap-1">
-                          <button type="button" class="btn btn-sm btn-outline-secondary update-cookie-live-btn"
-                            data-id="<%= account._id %>">
-                            <i class="fas fa-cookie-bite"></i> Update Cookie Live
-                          </button>
                           <button type="button" class="btn btn-sm btn-outline-primary view-logs-btn"
                             data-user-id="<%= account.user_id || '' %>" data-username="<%= account.username || '' %>">
                             <i class="fas fa-list"></i> Logs
@@ -174,6 +175,33 @@
         <div class="card-body p-0" style="background: #0f1115;">
           <div id="realtimeLogPanel" style="max-height: 980px; overflow-y: auto; background: #0f1115; color: #d6d6d6; font-family: Consolas, 'Courier New', monospace; font-size: 12px; font-weight: 700;" class="p-2"></div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="addAccountFeedback" class="alert d-none mb-3" role="alert"></div>
+        <div class="mb-3">
+          <label for="addAccountUsernameInput" class="form-label">Username</label>
+          <input id="addAccountUsernameInput" type="text" class="form-control" placeholder="Nhập username">
+        </div>
+        <div class="mb-0">
+          <label for="addAccountCookieInput" class="form-label">Cookie Live</label>
+          <textarea id="addAccountCookieInput" class="form-control" rows="5" placeholder="Dán cookie vào đây..."></textarea>
+          <small class="text-muted">Hệ thống sẽ tự parse `SPC_U` để lấy `user_id`.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-primary" id="submitAddAccountBtn">Thêm Account</button>
       </div>
     </div>
   </div>
@@ -218,7 +246,14 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const toggles = document.querySelectorAll('.toggle-is-upload-api');
-    const updateCookieLiveButtons = document.querySelectorAll('.update-cookie-live-btn');
+    const updateCookieByInputBtn = document.getElementById('updateCookieByInputBtn');
+    const addAccountByCookieBtn = document.getElementById('addAccountByCookieBtn');
+    const addAccountModalElement = document.getElementById('addAccountModal');
+    const addAccountModal = addAccountModalElement ? new bootstrap.Modal(addAccountModalElement) : null;
+    const addAccountUsernameInput = document.getElementById('addAccountUsernameInput');
+    const addAccountCookieInput = document.getElementById('addAccountCookieInput');
+    const addAccountFeedback = document.getElementById('addAccountFeedback');
+    const submitAddAccountBtn = document.getElementById('submitAddAccountBtn');
     const viewLogsButtons = document.querySelectorAll('.view-logs-btn');
     const selectAllAccounts = document.getElementById('selectAllAccounts');
     const accountCheckboxes = document.querySelectorAll('.account-checkbox');
@@ -234,6 +269,20 @@
     const realtimeSocketStatus = document.getElementById('realtimeSocketStatus');
     let currentLogsUserId = '';
     let currentLogsUsername = '';
+
+    function setAddAccountFeedback(message, type) {
+      if (!addAccountFeedback) {
+        return;
+      }
+      if (!message) {
+        addAccountFeedback.className = 'alert d-none mb-3';
+        addAccountFeedback.textContent = '';
+        return;
+      }
+      const alertType = type || 'danger';
+      addAccountFeedback.className = `alert alert-${alertType} mb-3`;
+      addAccountFeedback.textContent = message;
+    }
 
     function formatRealtimeTime(value) {
       const date = value ? new Date(value) : new Date();
@@ -441,9 +490,8 @@
       });
     });
 
-    updateCookieLiveButtons.forEach(btn => {
-      btn.addEventListener('click', async function () {
-        const accountId = this.getAttribute('data-id');
+    if (updateCookieByInputBtn) {
+      updateCookieByInputBtn.addEventListener('click', async function () {
         const inputResult = await Swal.fire({
           title: 'Update Cookie Live',
           input: 'textarea',
@@ -461,21 +509,32 @@
           return;
         }
 
-        const cookieLive = inputResult.value || '';
-        if (!cookieLive.trim()) {
-          Swal.fire({
+        const cookieLive = (inputResult.value || '').trim();
+        if (!cookieLive) {
+          await Swal.fire({
             title: 'Thiếu dữ liệu',
             text: 'cookie_live không được để trống',
             icon: 'warning'
           });
           return;
         }
-        this.disabled = true;
+
+        const userId = cookieLive.match(/SPC_U=(\d+)/)?.[1];
+        if (!userId) {
+          await Swal.fire({
+            title: 'Không parse được user_id',
+            text: 'Cookie không có SPC_U hợp lệ',
+            icon: 'warning'
+          });
+          return;
+        }
+
+        updateCookieByInputBtn.disabled = true;
         try {
-          const response = await fetch(`/shopee-accounts/upload-video/${accountId}/update-cookie-live`, {
+          const response = await fetch('/shopee-accounts/upload-video/update-cookie-live-by-user-id', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cookie_live: cookieLive })
+            body: JSON.stringify({ user_id: userId, cookie_live: cookieLive })
           });
           const result = await response.json();
           if (!result.success) {
@@ -483,23 +542,75 @@
           }
           await Swal.fire({
             title: 'Thành công',
-            text: 'Đã cập nhật cookie_live',
+            text: `Đã cập nhật cookie cho ${result.account?.username || userId}`,
             icon: 'success',
-            timer: 1200,
+            timer: 1400,
             showConfirmButton: false
           });
           window.location.reload();
         } catch (error) {
-          Swal.fire({
+          await Swal.fire({
             title: 'Lỗi',
-            text: 'Không cập nhật được cookie_live',
+            text: error.message || 'Không cập nhật được cookie_live',
             icon: 'error'
           });
         } finally {
-          this.disabled = false;
+          updateCookieByInputBtn.disabled = false;
         }
       });
-    });
+    }
+
+    if (addAccountByCookieBtn) {
+      addAccountByCookieBtn.addEventListener('click', function () {
+        if (addAccountUsernameInput) addAccountUsernameInput.value = '';
+        if (addAccountCookieInput) addAccountCookieInput.value = '';
+        setAddAccountFeedback('');
+        if (addAccountModal) {
+          addAccountModal.show();
+        }
+      });
+    }
+
+    if (submitAddAccountBtn) {
+      submitAddAccountBtn.addEventListener('click', async function () {
+        const username = (addAccountUsernameInput?.value || '').trim();
+        const cookieLive = (addAccountCookieInput?.value || '').trim();
+        const userId = cookieLive.match(/SPC_U=(\d+)/)?.[1];
+
+        if (!username || !cookieLive) {
+          setAddAccountFeedback('Vui lòng nhập username và cookie', 'warning');
+          return;
+        }
+        if (!userId) {
+          setAddAccountFeedback('Không parse được user_id từ SPC_U trong cookie', 'warning');
+          return;
+        }
+
+        submitAddAccountBtn.disabled = true;
+        setAddAccountFeedback('Đang xử lý...', 'info');
+        try {
+          const response = await fetch('/shopee-accounts/upload-video/create-account-by-cookie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username,
+              user_id: userId,
+              cookie_live: cookieLive
+            })
+          });
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.message || 'Create account failed');
+          }
+          setAddAccountFeedback(`Đã thêm/cập nhật account ${result.account?.username || username}`, 'success');
+          setTimeout(() => window.location.reload(), 700);
+        } catch (error) {
+          setAddAccountFeedback(error.message || 'Không thêm được account', 'danger');
+        } finally {
+          submitAddAccountBtn.disabled = false;
+        }
+      });
+    }
 
     async function batchToggleUploadApi(enabled) {
       const accountIds = getSelectedAccountIds();
