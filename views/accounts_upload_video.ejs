@@ -308,7 +308,7 @@
       if (['warning', 'warn'].includes(value)) {
         return 'text-warning';
       }
-      if (['error', 'failed', 'fail', 'cookie_expired'].includes(value)) {
+      if (['error', 'failed', 'fail', 'cookie_expired', 'account_banned', 'upload_rate_limit'].includes(value)) {
         return 'text-danger';
       }
       return 'text-info';
@@ -376,6 +376,34 @@
         } else {
           statusTarget.classList.remove('text-success', 'fw-bold');
         }
+      }
+      //#region payload.is_upload_api
+      if (Object.prototype.hasOwnProperty.call(payload, 'is_upload_api')) {
+        updateUploadApiState(payload.account_id, payload.is_upload_api);
+      }
+      //#endregion
+    }
+
+    function updateUploadApiState(accountId, isUploadApi) {
+      const enabled = !!isUploadApi;
+
+      const toggleTarget = document.querySelector(`.toggle-is-upload-api[data-id="${accountId}"]`);
+      if (toggleTarget) {
+        toggleTarget.checked = enabled;
+      }
+
+      const badgeTarget = document.getElementById(`upload-api-status-${accountId}`);
+      if (!badgeTarget) {
+        return;
+      }
+      if (enabled) {
+        badgeTarget.textContent = 'allow upload';
+        badgeTarget.classList.remove('bg-danger');
+        badgeTarget.classList.add('bg-success');
+      } else {
+        badgeTarget.textContent = 'disable';
+        badgeTarget.classList.remove('bg-success');
+        badgeTarget.classList.add('bg-danger');
       }
     }
 
@@ -465,18 +493,7 @@
           if (!result.success) {
             throw new Error(result.message || 'Update failed');
           }
-          const target = document.getElementById(`upload-api-status-${accountId}`);
-          if (target) {
-            if (result.is_upload_api) {
-              target.textContent = 'allow upload';
-              target.classList.remove('bg-danger');
-              target.classList.add('bg-success');
-            } else {
-              target.textContent = 'disable';
-              target.classList.remove('bg-success');
-              target.classList.add('bg-danger');
-            }
-          }
+          updateUploadApiState(accountId, result.is_upload_api);
         } catch (error) {
           this.checked = !enabled;
           Swal.fire({

@@ -46,6 +46,12 @@ module.exports.uploadVideoStatus = async (req, res) => {
     } else if (video_status == "COOKIE_EXPIRED") {
       account.is_upload_api = false;
       account.last_status_upload = "Cookie hết hạn!";
+    } else if (video_status == "ACCOUNT_BANNED"){
+      account.last_status_upload = "Tài khoản bị ban";
+      account.is_upload_api = false;
+    } else if (video_status == "UPLOAD_RATE_LIMIT") {
+      account.last_status_upload = "Đăng video bị giới hạn";
+      account.is_upload_api = false;
     } else {
       account.last_status_upload = video_status;
     }
@@ -200,7 +206,14 @@ module.exports.postShopeeAccountsUpload = async (req, res) => {
     if(status_upload == "COOKIE_EXPIRED"){
       account.is_upload_api = false;
       account.last_status_upload = "Cookie hết hạn!";
-    } else if(status_upload == "VIDEO_UPLOADED"){
+    } else if(status_upload == "UPLOAD_RATE_LIMIT"){
+      account.last_status_upload = "Đăng video bị giới hạn";
+      account.is_upload_api = false;
+    } else if(status_upload == "ACCOUNT_BANNED"){
+      account.last_status_upload = "Tài khoản bị ban";
+      account.is_upload_api = false;
+    }
+    else if(status_upload == "VIDEO_UPLOADED"){
       account.totalVideosUploaded++;
       if (account.last_upload_time.getDate() !== new Date().getDate()) {
         account.dalyVideosUploaded = 1;
@@ -234,7 +247,8 @@ module.exports.postShopeeAccountsUpload = async (req, res) => {
       maxDalyVideosUploaded: Number(account.maxDalyVideosUploaded || 0),
       last_upload_time: account.last_upload_time || null,
       number_error_upload: Number(account.number_error_upload || 0),
-      last_status_upload: account.last_status_upload || ''
+      last_status_upload: account.last_status_upload || '',
+      is_upload_api: account.is_upload_api || false
     });
 
     res.json({
