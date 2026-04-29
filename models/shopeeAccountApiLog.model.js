@@ -6,7 +6,8 @@ const shopeeAccountApiLogSchema = new mongoose.Schema({
   message: { type: String, default: '' },
   job_id: { type: String, default: '' },
   source: { type: String, default: 'upload_api' },
-  payload: { type: mongoose.Schema.Types.Mixed, default: {} }
+  payload: { type: mongoose.Schema.Types.Mixed, default: {} },
+  post_link: { type: String, default: '' }
 }, { timestamps: true });
 
 shopeeAccountApiLogSchema.index({ createdAt: -1 });

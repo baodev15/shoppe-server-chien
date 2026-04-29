@@ -12,7 +12,9 @@ const crypto = require('crypto');
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16;        // 128 bit = 16 bytes
 const Account = require('../models/shopeeAccount.model');
+const User = require('../models/user.model');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 function deriveKey(passphrase) {
   // Trả về Buffer 32-byte
   return crypto.createHash('sha256')
@@ -26,7 +28,7 @@ function encrypt(plaintext, passphrase) {
 
   let encrypted = cipher.update(plaintext, 'utf8', 'base64');
   encrypted += cipher.final('base64');
-
+  
   // iv cũng encode base64 để giải mã sau này
   return iv.toString('base64') + ':' + encrypted;
 }
@@ -57,7 +59,6 @@ router.get('/', async (req, res) => {
       (req.user && req.user.role === 'admin')
         ? Team.find({ active: true }).sort({ name: 1 }).lean()
         : [],
-      
       // Get accounts with team info
       ShopeeAccount.find(query)
         .populate('team', 'name')
@@ -99,6 +100,52 @@ router.get('/', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+router.get('/api-upload-video/get-account', async (req, res) => {
+  try {
+    const isPrivilegedUser = req.user && ['admin', 'super_admin'].includes(req.user.role);
+    const query = {};
+    const page = Math.max(Number(req.query.page || 1), 1);
+    const limit = Math.min(Math.max(Number(req.query.limit || 40), 1), 200);
+    const skip = (page - 1) * limit;
+
+    if (!isPrivilegedUser && req.user && req.user.team) {
+      query.team = req.user.team;
+    }
+
+    if (req.query.search) {
+      query.username = { $regex: req.query.search, $options: 'i' };
+    }
+
+    const [accounts, total] = await Promise.all([
+      ShopeeAccount.find(query)
+        .select('username user_id shop_id cookie_live time_update_cookie is_upload_api videosUploaded dalyVideosUploaded maxDalyVideosUploaded totalVideosUploaded last_status_upload number_error_upload team last_upload_time')
+        .populate('team', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      ShopeeAccount.countDocuments(query)
+    ]);
+    const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+    res.json({
+      success: true,
+      accounts,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching accounts upload video page:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
 
 router.get('/upload-video', async (req, res) => {
   try {
@@ -128,6 +175,61 @@ router.get('/upload-video', async (req, res) => {
   } catch (error) {
     console.error('Error fetching accounts upload video page:', error);
     res.status(500).send('Server error');
+  }
+});
+
+router.get('/video-upload-manager', (req, res) => {
+  res.render('video_upload_manager', {
+    activePage: 'video-upload-manager',
+    title: 'Video Upload Manager'
+  });
+});
+
+router.post('/video-upload-manager/generate-token', async (req, res) => {
+  try {
+    const username = String(
+      (req.body && (req.body.username || req.body.account_username))
+      || req.query.username
+      || (req.user && req.user.username)
+      || ''
+    ).trim();
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu username account để tạo access_token'
+      });
+    }
+    let user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        username,
+        team: user.team,
+        role: user.role,
+        type: 'video_upload_access'
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '300d' }
+    );
+
+    return res.json({
+      success: true,
+      token,
+      username
+    });
+  } catch (error) {
+    console.error('Error generating local upload token:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Không tạo được token'
+    });
   }
 });
 

@@ -32,7 +32,7 @@
         
         .main-content-wrapper {
             flex: 1;
-            margin-left: 10px;
+            margin-left: 230px;
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -41,6 +41,86 @@
         
         .header-section {
             flex-shrink: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #fff7f3 100%);
+            border-bottom: 1px solid #ffd8ca;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 14px rgba(238, 77, 45, 0.08);
+            backdrop-filter: blur(2px);
+            min-height: 56px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .header-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #ff7a45 0%, #ee4d2d 100%);
+            color: #fff;
+            font-size: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 6px 14px rgba(238, 77, 45, 0.25);
+        }
+
+        .header-title-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: #3c2a23;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .user-role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #ff7a45 0%, #ee4d2d 100%);
+            color: #fff;
+            border: 1px solid rgba(238, 77, 45, 0.32);
+        }
+
+        .user-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #4d3a34;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid #ffd8ca;
+        }
+
+        .team-id {
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 6px 10px;
+            background: #fff;
+            color: #ee4d2d;
+            border: 1px solid #ffd8ca;
         }
         
         .main-content {
@@ -49,9 +129,13 @@
             overflow-x: hidden;
             padding: 10px;
         }
+
+        div.app-container > div.main-content-wrapper > div.main-content {
+            margin-left: 0px;
+        }
         
         body.sidebar-collapsed .main-content-wrapper {
-            margin-left: 30px;
+            margin-left: 64px;
         }
         
 
@@ -136,22 +220,23 @@
         
         <div class="main-content-wrapper">
             <!-- Header Section -->
-            <header class="header-section" style="background-color: #fff; border-bottom: 1px solid #e0e0e0; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <header class="header-section">
                 <div class="header-title">
-                  
+                    <span class="header-chip"><i class="fas fa-sparkles"></i></span>
+                    <span class="header-title-text"><%= typeof title !== 'undefined' ? title : 'Shopee Tool Dashboard' %></span>
                 </div>
-                <div class="user-info" style="display: flex; align-items: center; gap: 15px;">
+                <div class="user-info">
                     <% if (locals.user) { %>
                         <% if (locals.user.role === 'admin' || locals.user.role === 'super_admin') { %>
-                            <span class="badge bg-danger" style="font-size: 12px;"><%= locals.user.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span>
+                            <span class="user-role-badge"><%= locals.user.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span>
                         <% } else { %>
-                            <span class="user-name" style="color: #555; font-size: 14px;">
-                                <i class="fas fa-user" style="margin-right: 5px;"></i>
+                            <span class="user-name">
+                                <i class="fas fa-user"></i>
                                 Xin Chào <%= user.username %>
                             </span>
                             <% if (user.team && user.team._id) { %>
-                                <span class="team-id badge bg-primary" style="font-size: 12px;" title="Team ID">
-                                    <i class="fas fa-users" style="margin-right: 3px;"></i>
+                                <span class="team-id" title="Team ID">
+                                    <i class="fas fa-users"></i>
                                     <%= user.team._id %>
                                 </span>
                             <% } %>

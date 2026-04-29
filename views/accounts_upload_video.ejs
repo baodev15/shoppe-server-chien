@@ -227,12 +227,13 @@
                 <th>Status</th>
                 <th style="width: 45%;">Message</th>
                 <th>Job ID</th>
+                <th>Post Link</th>
                 <th>Source</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="6" class="text-center text-muted py-3">Chọn account để xem log</td>
+                <td colspan="7" class="text-center text-muted py-3">Chọn account để xem log</td>
               </tr>
             </tbody>
           </table>
@@ -785,6 +786,40 @@
       return `<span class="badge bg-secondary">${status || '-'}</span>`;
     }
 
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPostLinkButton(linkValue) {
+      const raw = String(linkValue || '').trim();
+      if (!raw) {
+        return '<span class="text-muted">-</span>';
+      }
+      try {
+        const parsed = new URL(raw);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return `<span class="text-muted text-truncate d-inline-block" style="max-width: 220px;" title="${escapeHtml(raw)}">${escapeHtml(raw)}</span>`;
+        }
+        const safeHref = escapeHtml(parsed.toString());
+        return `
+          <a class="btn btn-sm btn-outline-primary"
+             href="${safeHref}"
+             target="_blank"
+             rel="noopener noreferrer"
+             title="${safeHref}">
+            <i class="fas fa-external-link-alt me-1"></i>Mở
+          </a>
+        `;
+      } catch (error) {
+        return `<span class="text-muted text-truncate d-inline-block" style="max-width: 220px;" title="${escapeHtml(raw)}">${escapeHtml(raw)}</span>`;
+      }
+    }
+
     async function loadApiLogs(username = '') {
       const tbody = document.querySelector('#apiLogsTable tbody');
       const params = new URLSearchParams();
@@ -792,7 +827,7 @@
       if (username) {
         params.set('username', username);
       }
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Đang tải logs...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Đang tải logs...</td></tr>';
       try {
         const response = await fetch(`/shopee-accounts/upload-video/logs?${params.toString()}`);
         const result = await response.json();
@@ -801,7 +836,7 @@
         }
         const logs = Array.isArray(result.data) ? result.data : [];
         if (!logs.length) {
-          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Chưa có log</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Chưa có log</td></tr>';
           return;
         }
         tbody.innerHTML = logs.map(log => `
@@ -811,11 +846,12 @@
             <td>${getStatusBadge(log.status)}</td>
             <td style="width: 45%; white-space: normal; word-break: break-word;">${log.message || '-'}</td>
             <td>${log.job_id || '-'}</td>
+            <td>${renderPostLinkButton(log.post_link)}</td>
             <td>${log.source || '-'}</td>
           </tr>
         `).join('');
       } catch (error) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Không tải được log</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Không tải được log</td></tr>';
       }
     }
 

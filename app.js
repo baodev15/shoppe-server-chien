@@ -121,12 +121,17 @@ const teamAccessMiddleware = (req, res, next) => {
   next();
 };
 
+const apiServicesRoutes = require('./routes/api.service');
+app.use('/api-services', apiServicesRoutes);
+// API routes (these might not need authentication)
+app.use('/api', apiRoutes);
 // Apply the protectRoute middleware globally ONLY ONCE
 app.use(protectRoute);
 
 // Protected routes
 const accountsRoutes = require('./routes/accounts');
 const productsRoutes = require('./routes/products');
+
 
 // Apply team access middleware to routes that need it
 app.use('/shopee-accounts', teamAccessMiddleware, accountsRoutes);
@@ -140,8 +145,7 @@ app.get('/', (req, res) => {
   res.redirect('/shopee-accounts');
 });
 
-// API routes (these might not need authentication)
-app.use('/api', apiRoutes);
+
 
 
 // Start server
